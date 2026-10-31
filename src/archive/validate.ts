@@ -1,3 +1,4 @@
+import { isProfile } from '../identity/profile';
 import { ARCHIVE_FORMAT, ARCHIVE_VERSION, EMOTIONS, type Archive } from './schema';
 
 export interface ValidationIssue {
@@ -8,7 +9,16 @@ export interface ValidationIssue {
 export type ValidationResult =
   { ok: true; archive: Archive; issues: [] } | { ok: false; issues: ValidationIssue[] };
 
-const SOURCE_KINDS = ['markdown', 'whatsapp', 'telegram', 'mbox', 'interview', 'audio', 'demo'];
+const SOURCE_KINDS = [
+  'markdown',
+  'whatsapp',
+  'telegram',
+  'mbox',
+  'interview',
+  'audio',
+  'typed',
+  'demo',
+];
 const ISO = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?)?$/;
 const HEX64 = /^[0-9a-f]{64}$/;
 
@@ -169,6 +179,18 @@ export function validateArchive(input: unknown): ValidationResult {
   });
   void sources;
   void people;
+
+  if (input['identity'] !== undefined && !isProfile(input['identity']))
+    bad('identity', 'must be a valid identity profile');
+  const interview = input['interview'];
+  if (interview !== undefined) {
+    if (!Array.isArray(interview)) bad('interview', 'must be an array');
+    else
+      interview.forEach((t: unknown, i) => {
+        if (!isRec(t) || typeof t['question'] !== 'string' || !isIso(t['askedAt']))
+          bad(`interview[${i}]`, 'must be {question, dimension, askedAt}');
+      });
+  }
 
   if (issues.length) return { ok: false, issues };
   return { ok: true, archive: input as unknown as Archive, issues: [] };

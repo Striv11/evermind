@@ -1,4 +1,6 @@
 /** Evermind Archive Format, version 1. Spec: docs/ARCHIVE_FORMAT.md */
+import type { IdentityProfile } from '../identity/profile';
+import type { DimensionId } from '../identity/dimensions';
 
 export const ARCHIVE_FORMAT = 'evermind-archive';
 export const ARCHIVE_VERSION = 1;
@@ -8,7 +10,7 @@ export const AI_DISCLOSURE =
   'This is an AI reconstruction built from the subject’s own data. It is not the person and does not speak for them.';
 
 export type SourceKind =
-  'markdown' | 'whatsapp' | 'telegram' | 'mbox' | 'interview' | 'audio' | 'demo';
+  'markdown' | 'whatsapp' | 'telegram' | 'mbox' | 'interview' | 'audio' | 'typed' | 'demo';
 
 /** Emotion labels used across the app; see src/insight/emotions.ts. */
 export const EMOTIONS = [
@@ -110,6 +112,16 @@ export interface Archive {
   voiceSamples: VoiceSample[];
   capsules: TimeCapsule[];
   attachments: AttachmentRef[];
+  /** Derived understanding of the person (rebuildable from memories). */
+  identity?: IdentityProfile;
+  /** Interview questions already asked, so the interviewer never repeats itself. */
+  interview?: InterviewTurn[];
+}
+
+export interface InterviewTurn {
+  question: string;
+  dimension: DimensionId;
+  askedAt: string;
 }
 
 export function emptyArchive(displayName: string, now = new Date()): Archive {

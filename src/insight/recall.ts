@@ -66,3 +66,6 @@ export function answer(archive: Archive, question: string, threshold = 0.3): Twi
   if (second && second.score >= first!.score * 0.6) parts.push(second.memory.text);
   return { text: parts.join(' … '), citations: hits.map((h) => h.memory.id), abstained: false };
 }
+
+/** Spoken form of a twin reply: drop citation markers before text-to-speech. */
+export const forSpeech = (text: string) => text.replace(/\s*\[m:[^\]]+\]/g, '').trim();

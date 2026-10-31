@@ -1,4 +1,4 @@
-import type { Archive, EmotionScore, EpisodicMemory, Person } from '../archive/schema';
+import type { Archive, EmotionScore, EpisodicMemory, Person, SourceKind } from '../archive/schema';
 import { prosody, type Prosody } from '../audio/features';
 import { scoreEmotions, tokenize } from './emotions';
 import { classifyThemes, extractDate, extractPeople } from './themes';
@@ -12,6 +12,8 @@ export interface TranscriptChunk {
 
 export interface AudioInput {
   fileName: string;
+  /** Defaults to "audio"; typed interview answers use "typed". */
+  kind?: SourceKind;
   recordedAt: string; // ISO date, used when the speech names no date
   chunks: TranscriptChunk[];
   /** Mono PCM of the whole recording; enables tone-of-voice analysis. */
@@ -109,7 +111,9 @@ export function ingestAudio(
       sourceId,
       emotions: emotions.slice(0, 3),
       themes: classifyThemes(p.text).slice(0, 3),
-      span: { start: round2(p.start), end: round2(p.end) },
+      ...(input.kind && input.kind !== 'audio'
+        ? {}
+        : { span: { start: round2(p.start), end: round2(p.end) } }),
       ...(mentions.length ? { people: mentions.map((m) => personId(m.name, m.relation)) } : {}),
     };
   });
@@ -130,7 +134,12 @@ export function ingestAudio(
       ...archive,
       sources: [
         ...archive.sources,
-        { id: sourceId, kind: 'audio', label: input.fileName, importedAt: now.toISOString() },
+        {
+          id: sourceId,
+          kind: input.kind ?? 'audio',
+          label: input.fileName,
+          importedAt: now.toISOString(),
+        },
       ],
       people,
       memories: [...archive.memories, ...memories],
