@@ -1,0 +1,102 @@
+/** Evermind Archive Format, version 1. Spec: docs/ARCHIVE_FORMAT.md */
+
+export const ARCHIVE_FORMAT = 'evermind-archive';
+export const ARCHIVE_VERSION = 1;
+
+/** Shown wherever the twin speaks; part of the archive so it survives export. */
+export const AI_DISCLOSURE =
+  'This is an AI reconstruction built from the subject’s own data. It is not the person and does not speak for them.';
+
+export type SourceKind = 'markdown' | 'whatsapp' | 'telegram' | 'mbox' | 'interview' | 'demo';
+
+export interface Source {
+  id: string;
+  kind: SourceKind;
+  label: string;
+  importedAt: string; // ISO 8601
+}
+
+/** A dated event the subject remembers or wrote about. */
+export interface EpisodicMemory {
+  id: string;
+  date: string; // ISO 8601 date or datetime
+  text: string;
+  sourceId: string;
+  people?: string[]; // Person ids
+  place?: string;
+  tags?: string[];
+}
+
+/** A durable statement (belief, preference, relationship) as subject-predicate-object. */
+export interface SemanticFact {
+  id: string;
+  subject: string;
+  predicate: string;
+  object: string;
+  confidence: number; // 0..1
+  sourceIds: string[];
+}
+
+export interface Person {
+  id: string;
+  name: string;
+  relation?: string;
+}
+
+/** A message written by the subject; used only for the style model. */
+export interface VoiceSample {
+  id: string;
+  text: string;
+  sourceId: string;
+  date?: string;
+}
+
+/** Message sealed until `unlockAt`. Honest note: enforced by the app, not by cryptography. */
+export interface TimeCapsule {
+  id: string;
+  createdAt: string;
+  unlockAt: string;
+  to: string;
+  body: string;
+}
+
+export interface AttachmentRef {
+  id: string;
+  filename: string;
+  mediaType: string;
+  bytes: number;
+  sha256: string; // lowercase hex
+  path: string; // relative path inside the archive zip, e.g. attachments/ab12.jpg
+}
+
+export interface Archive {
+  format: typeof ARCHIVE_FORMAT;
+  version: number;
+  createdAt: string;
+  subject: { displayName: string; isFictional: boolean };
+  aiDisclosure: string;
+  sources: Source[];
+  people: Person[];
+  memories: EpisodicMemory[];
+  facts: SemanticFact[];
+  voiceSamples: VoiceSample[];
+  capsules: TimeCapsule[];
+  attachments: AttachmentRef[];
+}
+
+export function emptyArchive(displayName: string, now = new Date()): Archive {
+  return {
+    format: ARCHIVE_FORMAT,
+    version: ARCHIVE_VERSION,
+    createdAt: now.toISOString(),
+    subject: { displayName, isFictional: false },
+    aiDisclosure: AI_DISCLOSURE,
+    sources: [],
+    people: [],
+    memories: [],
+    facts: [],
+    voiceSamples: [],
+    capsules: [],
+    attachments: [],
+  };
+}
