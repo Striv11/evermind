@@ -20,9 +20,9 @@ that). Source of truth for types: [`src/archive/schema.ts`](../src/archive/schem
 | `createdAt`     | ISO 8601                | Export time.                                                             |
 | `subject`       | `{displayName, isFictional}` | Whose data this is. `isFictional` is true for the demo persona.     |
 | `aiDisclosure`  | string, non-empty       | The statement that any twin built from this is an AI reconstruction.     |
-| `sources`       | `Source[]`              | Where data came from: `markdown`, `whatsapp`, `telegram`, `mbox`, `interview`, `demo`. |
+| `sources`       | `Source[]`              | Where data came from: `markdown`, `whatsapp`, `telegram`, `mbox`, `interview`, `audio`, `demo`. |
 | `people`        | `Person[]`              | `{id, name, relation?}`.                                                 |
-| `memories`      | `EpisodicMemory[]`      | Dated events: `{id, date, text, sourceId, people?, place?, tags?}`.      |
+| `memories`      | `EpisodicMemory[]`      | Dated events: `{id, date, text, sourceId, people?, place?, tags?, emotions?, themes?, span?}`. `emotions` is `[{label, score 0..1}]`, strongest first; `span` is `{start, end}` seconds within an audio source. |
 | `facts`         | `SemanticFact[]`        | Knowledge-graph triples: `{id, subject, predicate, object, confidence 0..1, sourceIds}`. |
 | `voiceSamples`  | `VoiceSample[]`         | Only the subject's own words: `{id, text, sourceId, date?}`.             |
 | `capsules`      | `TimeCapsule[]`         | `{id, createdAt, unlockAt, to, body}`.                                   |
@@ -38,6 +38,7 @@ are rebuilt from `memories` on import.
 3. `memories[].sourceId`, `voiceSamples[].sourceId` and `facts[].sourceIds[]` must reference an existing source;
    `memories[].people[]` must reference existing people.
 4. `capsules[].unlockAt` must not precede `createdAt`.
+5. `memories[].emotions[].label` is one of `joy, love, gratitude, pride, hope, nostalgia, sadness, fear, anger, regret, neutral`.
 5. `attachments[].path` must be relative, start with `attachments/`, and must not contain `..`.
 6. `aiDisclosure` must be present.
 

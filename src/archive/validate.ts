@@ -1,4 +1,4 @@
-import { ARCHIVE_FORMAT, ARCHIVE_VERSION, type Archive } from './schema';
+import { ARCHIVE_FORMAT, ARCHIVE_VERSION, EMOTIONS, type Archive } from './schema';
 
 export interface ValidationIssue {
   path: string;
@@ -8,7 +8,7 @@ export interface ValidationIssue {
 export type ValidationResult =
   { ok: true; archive: Archive; issues: [] } | { ok: false; issues: ValidationIssue[] };
 
-const SOURCE_KINDS = ['markdown', 'whatsapp', 'telegram', 'mbox', 'interview', 'demo'];
+const SOURCE_KINDS = ['markdown', 'whatsapp', 'telegram', 'mbox', 'interview', 'audio', 'demo'];
 const ISO = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?)?$/;
 const HEX64 = /^[0-9a-f]{64}$/;
 
@@ -82,6 +82,27 @@ export function validateArchive(input: unknown): ValidationResult {
     if (!isIso(m['date'])) bad(`${p}.date`, 'must be an ISO 8601 date');
     str(m, 'text', p);
     str(m, 'sourceId', p);
+    const emo = m['emotions'];
+    if (emo !== undefined) {
+      if (!Array.isArray(emo)) bad(`${p}.emotions`, 'must be an array');
+      else
+        emo.forEach((e: unknown, j) => {
+          if (!isRec(e) || !(EMOTIONS as readonly string[]).includes(e['label'] as string))
+            bad(`${p}.emotions[${j}].label`, `must be one of ${EMOTIONS.join(', ')}`);
+          else if (typeof e['score'] !== 'number' || !(e['score'] >= 0 && e['score'] <= 1))
+            bad(`${p}.emotions[${j}].score`, 'must be 0..1');
+        });
+    }
+    const span = m['span'];
+    if (span !== undefined) {
+      const ok =
+        isRec(span) &&
+        typeof span['start'] === 'number' &&
+        typeof span['end'] === 'number' &&
+        span['start'] >= 0 &&
+        span['end'] >= span['start'];
+      if (!ok) bad(`${p}.span`, 'must be {start, end} seconds with 0 <= start <= end');
+    }
   });
   const facts = list('facts', (f, p) => {
     str(f, 'subject', p);

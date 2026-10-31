@@ -7,7 +7,29 @@ export const ARCHIVE_VERSION = 1;
 export const AI_DISCLOSURE =
   'This is an AI reconstruction built from the subject’s own data. It is not the person and does not speak for them.';
 
-export type SourceKind = 'markdown' | 'whatsapp' | 'telegram' | 'mbox' | 'interview' | 'demo';
+export type SourceKind =
+  'markdown' | 'whatsapp' | 'telegram' | 'mbox' | 'interview' | 'audio' | 'demo';
+
+/** Emotion labels used across the app; see src/insight/emotions.ts. */
+export const EMOTIONS = [
+  'joy',
+  'love',
+  'gratitude',
+  'pride',
+  'hope',
+  'nostalgia',
+  'sadness',
+  'fear',
+  'anger',
+  'regret',
+  'neutral',
+] as const;
+export type Emotion = (typeof EMOTIONS)[number];
+
+export interface EmotionScore {
+  label: Emotion;
+  score: number; // 0..1
+}
 
 export interface Source {
   id: string;
@@ -25,6 +47,12 @@ export interface EpisodicMemory {
   people?: string[]; // Person ids
   place?: string;
   tags?: string[];
+  /** Strongest first. Derived from words, and for audio also from tone of voice. */
+  emotions?: EmotionScore[];
+  /** Life areas such as "family" or "work"; see src/insight/themes.ts. */
+  themes?: string[];
+  /** For audio sources: where in the recording this memory was spoken, in seconds. */
+  span?: { start: number; end: number };
 }
 
 /** A durable statement (belief, preference, relationship) as subject-predicate-object. */
