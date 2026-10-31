@@ -1,0 +1,12 @@
+.env
+*.pem
+*.key
+/dist/
+/build/
+/target/
+node_modules/
+__pycache__/
+.DS_Store
+playwright-report/
+test-results/
+*.tsbuildinfo
