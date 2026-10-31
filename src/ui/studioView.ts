@@ -4,6 +4,9 @@ import { transcribe } from '../audio/transcribe';
 import { dominant } from '../insight/emotions';
 import { ingestAudio } from '../insight/pipeline';
 import { answer } from '../insight/recall';
+import type { ChatTurn } from '../identity/brain';
+import { forSpeech } from '../insight/recall';
+import { captureSection } from './captureView';
 import { THEME_LABELS, THEMES, type Theme } from '../insight/themes';
 import { bestFrame } from '../twin/frame';
 import { DId, ElevenLabs } from '../twin/services';
@@ -43,7 +46,10 @@ interface Recording {
 const recordings: Recording[] = [];
 let face: { jpeg: Blob; preview: string } | null = null;
 let voiceId = '';
-const keys = { eleven: '', did: '' };
+export const keys = { eleven: '', did: '', anthropic: '' };
+/** Set by the story section; lets the interviewer feed recorded answers into the same pipeline. */
+export let runMedia: ((name: string, blob: Blob) => Promise<void>) | null = null;
+const chat: { turn: ChatTurn; citations: string[] }[] = [];
 const filters: { emotion: Emotion | null; theme: Theme | null } = { emotion: null, theme: null };
 
 export function studioView(root: HTMLElement): void {
@@ -69,8 +75,14 @@ export function studioView(root: HTMLElement): void {
     return;
   }
   const memoriesBox = h('section', { class: 'studio-section', 'aria-labelledby': 'mem-h' });
-  const renderMemories = () => memoriesBox.replaceChildren(...memoriesSection(vault.data));
-  renderMemories();
+  const capture = captureSection(() => refresh());
+  const refresh = () => {
+    const v = activeVault();
+    if (!v) return;
+    memoriesBox.replaceChildren(...memoriesSection(v.data));
+    capture.refresh();
+  };
+  memoriesBox.replaceChildren(...memoriesSection(vault.data));
   root.replaceChildren(
     h(
       'div',
@@ -80,9 +92,10 @@ export function studioView(root: HTMLElement): void {
       h(
         'p',
         { class: 'lead' },
-        'Talk about your life. Evermind transcribes it on this device, sorts it by emotion and life area, and keeps it in your encrypted vault. When you are ready, it can give your memories your voice and face.',
+        'Talk about your life. Evermind transcribes it on this device, sorts it by emotion and life area, learns who you are, and keeps it all in your encrypted vault. The capture map shows how much of you is recorded and what to talk about next.',
       ),
-      storySection(renderMemories),
+      capture.el,
+      storySection(refresh),
       memoriesBox,
       twinSection(),
     ),
@@ -152,6 +165,7 @@ function storySection(onAdded: () => void): HTMLElement {
       status.className = 'error';
     }
   };
+  runMedia = run;
 
   files.addEventListener('change', () => {
     void (async () => {
@@ -180,7 +194,7 @@ function storySection(onAdded: () => void): HTMLElement {
   return h(
     'section',
     { class: 'studio-section', 'aria-labelledby': 'story-h' },
-    h('h2', { id: 'story-h' }, '1 · Tell your story'),
+    h('h2', { id: 'story-h' }, '2 · Tell your story freely'),
     h(
       'p',
       {},
@@ -208,7 +222,7 @@ function memoriesSection(a: Archive): Node[] {
   const mems = a.memories.filter((m) => m.sourceId && m.emotions);
   if (!mems.length)
     return [
-      h('h2', { id: 'mem-h' }, '2 · Your memories'),
+      h('h2', { id: 'mem-h' }, '3 · Your memories'),
       h(
         'p',
         { class: 'empty' },
@@ -260,7 +274,7 @@ function memoriesSection(a: Archive): Node[] {
   const people = new Map(a.people.map((p) => [p.id, p.name]));
 
   return [
-    h('h2', { id: 'mem-h' }, `2 · Your memories (${total})`),
+    h('h2', { id: 'mem-h' }, `3 · Your memories (${total})`),
     spectrum,
     h(
       'div',
@@ -413,38 +427,35 @@ function twinSection(): HTMLElement {
   const q = h('input', {
     type: 'text',
     id: 'ask',
-    placeholder: 'Ask your twin something, e.g. “What did grandma teach you?”',
+    placeholder: 'Talk to your twin, e.g. “Should I quit my job to start a company?”',
     'data-testid': 'ask',
   });
   const reply = h('div', { class: 'reply', 'aria-live': 'polite', 'data-testid': 'reply' });
-  const askBtn = h('button', { class: 'btn primary', type: 'submit' }, 'Ask');
+  const askBtn = h('button', { class: 'btn primary', type: 'submit' }, 'Send');
   const form = h('form', { class: 'row' }, q, askBtn);
-  form.addEventListener('submit', (ev) => {
-    ev.preventDefault();
-    const v = activeVault();
-    if (!v || !q.value.trim()) return;
-    const a = answer(v.data, q.value);
-    const speakBtn = h('button', { class: 'btn', type: 'button' }, '🔊 Say it in my voice');
-    const videoBtn = h(
-      'button',
-      { class: 'btn', type: 'button' },
-      '🎬 Make a video of me saying it',
-    );
+
+  /** One assistant bubble, with buttons to voice it or turn it into video. */
+  const bubble = (text: string, citations: string[], inferredNote: boolean) => {
+    const body = h('blockquote', {}, text);
     const media = h('div', { class: 'media' });
+    const speakBtn = h('button', { class: 'btn', type: 'button' }, '🔊 In my voice');
+    const videoBtn = h('button', { class: 'btn', type: 'button' }, '🎬 As a video of me');
     let speech: Blob | null = null;
     const getSpeech = async () => {
       ready();
       if (!keys.eleven || !voiceId) throw new Error('Clone your voice first.');
-      speech ??= await new ElevenLabs(keys.eleven).speak(voiceId, a.text);
+      speech ??= await new ElevenLabs(keys.eleven).speak(
+        voiceId,
+        forSpeech(body.textContent ?? ''),
+      );
       return speech;
     };
     speakBtn.addEventListener('click', () => {
       void (async () => {
         try {
           say('Generating speech…');
-          const s = await getSpeech();
           media.replaceChildren(
-            h('audio', { controls: '', autoplay: '', src: URL.createObjectURL(s) }),
+            h('audio', { controls: '', autoplay: '', src: URL.createObjectURL(await getSpeech()) }),
           );
           say('');
         } catch (e) {
@@ -458,8 +469,7 @@ function twinSection(): HTMLElement {
           if (!keys.did) throw new Error('Add your D-ID API key.');
           if (!face) throw new Error('Upload a video or photo of your face first.');
           say('Generating speech…');
-          const s = await getSpeech();
-          const url = await new DId(keys.did).talkingVideo(face.jpeg, s, (st) =>
+          const url = await new DId(keys.did).talkingVideo(face.jpeg, await getSpeech(), (st) =>
             say(`Video: ${st}…`),
           );
           media.replaceChildren(
@@ -483,23 +493,86 @@ function twinSection(): HTMLElement {
         }
       })();
     });
-    reply.replaceChildren(
+    const meta = h('p', { class: 'fine' });
+    const setMeta = (cites: string[]) => {
+      meta.textContent = cites.length
+        ? `Grounded in ${cites.length} of your memories${inferredNote ? '; anything uncited is the twin reasoning from your profile' : ''}.`
+        : inferredNote
+          ? 'No memory cited: this is the twin reasoning from your profile.'
+          : '';
+    };
+    setMeta(citations);
+    const el = h(
+      'div',
+      { class: 'turn twin' },
       h('p', { class: 'ai-label' }, 'AI reconstruction'),
-      h('blockquote', {}, a.text),
-      ...(a.abstained
-        ? []
-        : [
-            h('p', { class: 'fine' }, `From ${a.citations.length} of your recorded memories.`),
-            h('div', { class: 'cta' }, speakBtn, videoBtn),
-          ]),
+      body,
+      meta,
+      h('div', { class: 'cta' }, speakBtn, videoBtn),
       media,
     );
+    return { el, body, setMeta };
+  };
+
+  const renderHistory = () =>
+    reply.replaceChildren(
+      ...chat.map(({ turn, citations }) =>
+        turn.role === 'user'
+          ? h('div', { class: 'turn you' }, h('p', {}, turn.text))
+          : bubble(turn.text, citations, !!keys.anthropic).el,
+      ),
+    );
+  renderHistory();
+
+  form.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const v = activeVault();
+    const text = q.value.trim();
+    if (!v || !text) return;
+    q.value = '';
+    chat.push({ turn: { role: 'user', text }, citations: [] });
+    reply.append(h('div', { class: 'turn you' }, h('p', {}, text)));
+    if (!keys.anthropic) {
+      // Offline: quote recorded memories only.
+      const a = answer(v.data, text);
+      chat.push({ turn: { role: 'assistant', text: a.text }, citations: a.citations });
+      reply.append(bubble(a.text, a.citations, false).el);
+      return;
+    }
+    const b = bubble('', [], true);
+    b.body.textContent = '…';
+    reply.append(b.el);
+    askBtn.disabled = true;
+    void (async () => {
+      try {
+        let first = true;
+        const { speak } = await import('../identity/brain');
+        const r = await speak(
+          keys.anthropic,
+          v.data,
+          chat.map((c) => c.turn),
+          (d: string) => {
+            if (first) b.body.textContent = '';
+            first = false;
+            b.body.textContent += d;
+          },
+        );
+        chat.push({ turn: { role: 'assistant', text: r.text }, citations: r.citations });
+        b.setMeta(r.citations);
+      } catch (e) {
+        b.body.textContent = '';
+        chat.pop();
+        fail(e);
+      } finally {
+        askBtn.disabled = false;
+      }
+    })();
   });
 
   return h(
     'section',
     { class: 'studio-section', 'aria-labelledby': 'twin-h' },
-    h('h2', { id: 'twin-h' }, '3 · Your digital self'),
+    h('h2', { id: 'twin-h' }, '4 · Your digital self'),
     h(
       'p',
       {},
@@ -530,8 +603,13 @@ function twinSection(): HTMLElement {
     ),
     facePreview,
     h('h3', {}, 'Talk to your twin'),
+    h(
+      'p',
+      { class: 'fine' },
+      'With an Anthropic key (step 1) your twin thinks and talks like you, citing memories and reasoning from your profile. Without one it can only quote what you recorded.',
+    ),
+    reply,
     form,
     log,
-    reply,
   );
 }

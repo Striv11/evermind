@@ -482,3 +482,113 @@ kbd {
   width: 100%;
   margin-top: var(--s2);
 }
+
+/* Capture map, interviewer, profile, chat */
+.overall {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  margin: var(--s3) 0;
+}
+.overall .big {
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  color: var(--accent);
+}
+.dims {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--s3);
+  display: grid;
+  gap: 6px;
+}
+.dims li {
+  display: grid;
+  grid-template-columns: minmax(7rem, 11rem) 1fr 3rem;
+  gap: var(--s2);
+  align-items: center;
+  font-size: var(--fs-sm);
+}
+.dim-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+.dim-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.dim-pct {
+  text-align: right;
+  color: var(--muted);
+}
+.interview {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--s3);
+}
+.interview .question {
+  font-size: var(--fs-lg);
+  margin: var(--s1) 0 var(--s3);
+}
+.interview .eyebrow {
+  margin: 0;
+}
+textarea.answer {
+  width: 100%;
+  margin-top: var(--s2);
+  padding: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.profile {
+  margin-top: var(--s4);
+}
+.profile blockquote {
+  margin: var(--s2) 0;
+  padding: var(--s3);
+  border-left: 4px solid var(--accent);
+  background: var(--bg);
+  border-radius: 0 8px 8px 0;
+}
+.traits {
+  margin: var(--s2) 0;
+}
+.traits summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.traits li {
+  margin: var(--s1) 0;
+  overflow-wrap: anywhere;
+}
+.x {
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: var(--fs-md);
+}
+.turn {
+  margin: var(--s3) 0;
+}
+.turn.you p {
+  margin-left: auto;
+  max-width: 85%;
+  width: fit-content;
+  padding: var(--s2) var(--s3);
+  background: var(--accent);
+  color: var(--accent-text);
+  border-radius: 12px 12px 2px 12px;
+}
+@media (max-width: 480px) {
+  .dims li {
+    grid-template-columns: 6.5rem 1fr 2.5rem;
+  }
+}

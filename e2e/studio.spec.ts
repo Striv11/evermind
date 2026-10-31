@@ -14,6 +14,26 @@ test('studio requires an unlocked vault', async ({ page }) => {
   await expect(page.getByText('Unlock your vault first')).toBeVisible();
 });
 
+test('capture map: interviewer question, typed answer raises coverage', async ({ page }) => {
+  await createVault(page);
+  await expect(page.getByTestId('coverage-overall')).toHaveText('0%');
+  const question = page.getByTestId('question');
+  await expect(question).not.toBeEmpty();
+  const first = await question.textContent();
+  await page.getByTestId('answer-type').click();
+  await page
+    .getByTestId('answer-text')
+    .fill(
+      'My grandmother raised me in Pune. She taught me that kindness is never wasted, and I miss her every day. My family is everything to me.',
+    );
+  await page.getByTestId('answer-save').click();
+  await expect(page.getByTestId('coverage-overall')).not.toHaveText('0%');
+  await expect(page.getByTestId('memories')).toContainText('grandmother raised me');
+  await expect(question).not.toHaveText(first!);
+  await page.getByTestId('answer-skip').click();
+  await expect(page.getByTestId('profile')).toContainText('Not built yet');
+});
+
 test('studio: empty state, honest abstention, consent gate', async ({ page }) => {
   await createVault(page);
   await expect(page.getByText('Nothing yet.')).toBeVisible();
