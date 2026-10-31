@@ -19,6 +19,17 @@ Fourteen-day arc (flagship). Every milestone has acceptance criteria that can be
 | 13  | Product polish                                       | Onboarding flow, empty/loading/error states everywhere, responsive audit at 360 px, auto-lock timer, axe accessibility checks in e2e, README screenshots refreshed                                                                                                                                                         | [ ]    |
 | 14  | Hardening + release                                  | Argon2id-WASM option with envelope migration; security review pass; full e2e on desktop + mobile; v1.0 tag, demo GIF, README final                                                                                                                                                                                         | [ ]    |
 
+## Pulled forward on 2026-10-31 (user request): audio life story + digital self
+
+| Milestone | Acceptance criteria | Status |
+| --- | --- | --- |
+| Audio studio | Upload or record audio/video; decode to 16 kHz mono; on-device Whisper (WebGPU with WASM fallback) in a worker; progress UI | [x] |
+| Emotion + life-area sorting | Lexicon emotions with negation and intensifiers, refined by tone of voice (energy, pitch variation, speaking rate); 12 life areas; people and dates (years, ages incl. number words) | [x] |
+| Memories view | Emotional spectrum, emotion and life-area filters, cards with people and scores | [x] |
+| Digital self | Consent gate; ElevenLabs instant voice clone + TTS; D-ID talking video from the sharpest frame of the user's video; keys in memory only | [x] |
+| Real-speech e2e | `STORY_WAV=... npx playwright test -g "real speech"` passes on synthesized speech | [x] |
+| Follow-ups | On-device emotion model (go_emotions ONNX) blended with the lexicon; store voice/face media encrypted in the vault so cloning survives reloads; persist voice id; speaker diarization so only the user's speech is kept; streaming D-ID avatar for live conversation | [ ] |
+
 ## Stretch
 
 - Optional time-lock encryption for capsules (drand/tlock-style), clearly opt-in.

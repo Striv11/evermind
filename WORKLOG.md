@@ -20,3 +20,11 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Next (day 2)**: markdown/journal and Q&A importers with date extraction and a drag-and-drop UI.
 
 **Not yet verified**: the Pages deployment itself (needs the repo pushed and Pages enabled with the "GitHub Actions" source).
+
+## 2026-10-31: Studio, audio memories, digital self (interactive session)
+
+**Changed:** Built the user-requested flow end to end. Audio or video is uploaded or recorded and decoded to 16 kHz mono. It is transcribed on-device by Whisper (transformers.js in a worker), then segmented into memory-sized passages. Each passage gets emotion scores (lexicon with negation and intensifiers, weighted by tone of voice from energy, pitch variation and speaking rate), life areas, people and a date, and is saved encrypted in the vault. The Studio shows an emotional spectrum with filters. Section 3 clones the user's voice (ElevenLabs) and renders a talking video (D-ID) from the sharpest, best-lit frame of their video. It is gated by explicit consent and labeled as AI. Keys live in memory only.
+**Schema:** `audio` source kind; optional `emotions`, `themes` and `span` on memories (backward compatible, validated, documented).
+**Tests:** 42 unit tests (emotions, themes, people, dates, prosody on synthetic tones, segmentation, ingest validity, recall/abstention, service clients with mocked fetch, frame sharpness). E2E: studio gating and abstention, plus an opt-in real-speech test that passed on a synthesized 38 s story: 3 memories with pride/nostalgia/regret, family/work/advice, and recall of the grandmother memory.
+**Learned:** `'gpu' in navigator` is not enough; machines without an adapter crashed model loading, so the worker now requests an adapter and falls back to WASM. Whisper writes small numbers as words, so age parsing handles "eight".
+**Next:** on-device emotion model, encrypted media storage, diarization, then the planned day-2 importers.
