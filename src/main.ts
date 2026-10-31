@@ -2,6 +2,7 @@ import './ui/styles.css';
 import { demoArchive } from './demo/persona';
 import { landingView, demoView } from './ui/views';
 import { lockSession, vaultView } from './ui/vaultView';
+import { studioView } from './ui/studioView';
 
 const main = document.getElementById('main')!;
 const root = document.documentElement;
@@ -13,6 +14,7 @@ function route(): void {
   });
   if (r === '/demo') main.replaceChildren(demoView(demoArchive()));
   else if (r === '/vault') void vaultView(main);
+  else if (r === '/studio') studioView(main);
   else main.replaceChildren(landingView());
   document.title = 'Evermind' + (r === '/' ? ' — a private memory that outlasts you' : '');
   main.focus({ preventScroll: true });
@@ -42,7 +44,7 @@ document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
   if (pendingG) {
     pendingG = false;
-    const dest = { h: '/', d: '/demo', v: '/vault' }[e.key];
+    const dest = { h: '/', d: '/demo', v: '/vault', s: '/studio' }[e.key];
     if (dest) location.hash = `#${dest}`;
     return;
   }

@@ -11,6 +11,24 @@ export function lockSession(): void {
   session = null;
 }
 
+/** The unlocked vault, if any. */
+export function activeVault(): UnlockedVault<Archive> | null {
+  return session && !session.isLocked ? session : null;
+}
+
+/** Validate, re-encrypt and persist a new version of the archive. */
+export async function saveArchive(
+  a: Archive,
+  storage: VaultStorage = new IndexedDbStorage(),
+): Promise<void> {
+  const v = activeVault();
+  if (!v) throw new Error('The vault is locked.');
+  const check = validateArchive(a);
+  if (!check.ok)
+    throw new Error(`Refusing to save an invalid archive: ${check.issues[0]?.message}`);
+  await storage.store(await v.save(a));
+}
+
 export async function vaultView(
   root: HTMLElement,
   storage: VaultStorage = new IndexedDbStorage(),
@@ -127,14 +145,25 @@ function unlockedPanel(storage: VaultStorage, rerender: () => void): HTMLElement
     { class: 'panel' },
     h('div', { class: 'banner', role: 'note' }, '\u26a0 ' + a.aiDisclosure),
     h('h1', {}, 'Your vault is unlocked'),
-    h(
-      'p',
-      { class: 'empty', 'data-testid': 'vault-empty' },
-      'It is empty. Next up: import journals and chats, or start the guided life interview. (Importers land on day 2, the interview on day 4.)',
-    ),
+    a.memories.length
+      ? h(
+          'p',
+          { class: 'lead', 'data-testid': 'vault-count' },
+          `${a.memories.length} memories, ${a.people.length} people, from ${a.sources.length} sources.`,
+        )
+      : h(
+          'p',
+          { class: 'empty', 'data-testid': 'vault-empty' },
+          'It is empty. Open the Studio to record or upload your story.',
+        ),
     h(
       'div',
       { class: 'cta' },
+      h(
+        'a',
+        { class: 'btn primary', href: '#/studio', 'data-testid': 'open-studio' },
+        'Open Studio',
+      ),
       btn('Export archive (.json)', 'export', '', exportJson),
       btn('Lock', 'lock', '', () => {
         lockSession();
