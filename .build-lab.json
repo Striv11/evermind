@@ -1,0 +1,7 @@
+{
+  "name": "evermind",
+  "description": "Private on-device digital twin and legacy archive: encrypted vault, local memory engine, grounded chat, open format.",
+  "language": "TypeScript",
+  "arc_days": 14,
+  "pages": true
+}
