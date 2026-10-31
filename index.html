@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="description"
+      content="Evermind: a private, on-device digital twin and legacy archive. No servers, no accounts, no keys."
+    />
+    <title>Evermind — a private memory that outlasts you</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <script>
+      try {
+        const t = localStorage.getItem('evermind-theme');
+        if (t) document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="top">
+      <a class="brand" href="#/" aria-label="Evermind home"
+        ><span class="mark" aria-hidden="true">∞</span> Evermind</a
+      >
+      <nav aria-label="Primary">
+        <a href="#/demo" data-testid="nav-demo">Demo</a>
+        <a href="#/vault" data-testid="nav-vault">My vault</a>
+        <button
+          id="theme"
+          type="button"
+          aria-label="Toggle light/dark theme"
+          title="Toggle theme (T)"
+        >
+          ◐
+        </button>
+        <button id="help" type="button" aria-label="Keyboard shortcuts" title="Shortcuts (?)">
+          ?
+        </button>
+      </nav>
+    </header>
+    <main id="main" tabindex="-1"></main>
+    <footer class="foot">
+      <p>
+        Evermind is an AI reconstruction tool. A twin is never the person it was built from.
+        Everything stays in your browser.
+      </p>
+    </footer>
+    <dialog id="shortcuts" aria-labelledby="sc-title">
+      <h2 id="sc-title">Keyboard shortcuts</h2>
+      <dl>
+        <dt><kbd>g</kbd> <kbd>h</kbd></dt>
+        <dd>Home</dd>
+        <dt><kbd>g</kbd> <kbd>d</kbd></dt>
+        <dd>Demo persona</dd>
+        <dt><kbd>g</kbd> <kbd>v</kbd></dt>
+        <dd>My vault</dd>
+        <dt><kbd>t</kbd></dt>
+        <dd>Toggle theme</dd>
+        <dt><kbd>?</kbd></dt>
+        <dd>This help</dd>
+      </dl>
+      <form method="dialog"><button class="btn">Close</button></form>
+    </dialog>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
