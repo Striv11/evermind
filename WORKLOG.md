@@ -28,3 +28,11 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Tests:** 42 unit tests (emotions, themes, people, dates, prosody on synthetic tones, segmentation, ingest validity, recall/abstention, service clients with mocked fetch, frame sharpness). E2E: studio gating and abstention, plus an opt-in real-speech test that passed on a synthesized 38 s story: 3 memories with pride/nostalgia/regret, family/work/advice, and recall of the grandmother memory.
 **Learned:** `'gpu' in navigator` is not enough; machines without an adapter crashed model loading, so the worker now requests an adapter and falls back to WASM. Whisper writes small numbers as words, so age parsing handles "eight".
 **Next:** on-device emotion model, encrypted media storage, diarization, then the planned day-2 importers.
+
+## 2026-10-31 (later): Full capture system, identity model, twin brain
+
+**Changed:** Added the capture map (12 dimensions: life story, people, values, beliefs, opinions, personality, emotional life, humor, how you talk, decisions, tastes, legacy), with coverage scoring and an adaptive interviewer that targets the weakest dimension. Added the identity model: Claude (claude-opus-5-5, structured output via Zod, server-side refusal fallback) reads every memory and returns a profile, and every trait must cite real memory ids. Added the twin brain: a streaming, multi-turn chat in the person's voice, with inline memory citations and explicit inference. Typed answers are a new `typed` source kind; the archive carries optional `identity` and `interview` fields (validated).
+**Perf:** the Anthropic SDK and Zod load lazily with the brain chunk; the initial JS bundle stays at ~24 KB gzip.
+**Tests:** 52 unit tests, including the brain against a faked HTTP layer (request shape, structured format, fallbacks, streaming, citation filtering) and a compile-time check that the model schema matches the stored profile type. E2E on desktop and mobile: capture map → typed answer → coverage rises → memory appears.
+**Not yet verified:** live Claude calls (no key in CI); the first real run with the user's key is the test.
+**Next:** fidelity loop, live voice conversation, twin memory, legacy controls.

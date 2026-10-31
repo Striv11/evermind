@@ -30,6 +30,20 @@ Fourteen-day arc (flagship). Every milestone has acceptance criteria that can be
 | Real-speech e2e | `STORY_WAV=... npx playwright test -g "real speech"` passes on synthesized speech | [x] |
 | Follow-ups | On-device emotion model (go_emotions ONNX) blended with the lexicon; store voice/face media encrypted in the vault so cloning survives reloads; persist voice id; speaker diarization so only the user's speech is kept; streaming D-ID avatar for live conversation | [ ] |
 
+## Full capture system (2026-10-31, user request: "capture all of me")
+
+| Milestone | Acceptance criteria | Status |
+| --- | --- | --- |
+| Capture map | 12 dimensions with facets and question banks; coverage per dimension from memories, traits and minutes of speech; overall % | [x] |
+| Adaptive interviewer | Asks for the weakest dimension, never repeats; Claude-written follow-ups with a key, question bank without; answer by voice or typing | [x] |
+| Identity model | Claude reads all memories and returns a schema-validated profile (summary, Big Five, traits per dimension with evidence and confidence, speech style, phrases, gaps); invented evidence is dropped; user can delete wrong traits | [x] |
+| Twin brain | Streaming multi-turn chat as the person; cites memories [m:id], marks inference, refuses to invent events; voice and video per reply | [x] |
+| Live Claude verification | Run understand / interview / chat against the real API with the user's key and review quality | [ ] |
+| Fidelity loop | User rates twin answers ("that's me" / "not me" + correction); corrections become memories; per-dimension fidelity score | [ ] |
+| Live conversation | Mic in, streamed reply, cloned voice out, streaming avatar | [ ] |
+| Memory over time | Twin remembers its own conversations; journal mode; profile diff over months | [ ] |
+| Legacy controls | Who may talk to the twin, topics off-limits, posthumous messages | [ ] |
+
 ## Stretch
 
 - Optional time-lock encryption for capsules (drand/tlock-style), clearly opt-in.
