@@ -2,6 +2,7 @@
 import type { IdentityProfile } from '../identity/profile';
 import type { DimensionId } from '../identity/dimensions';
 import type { FidelityRating } from '../identity/fidelity';
+import type { LegacyPolicy } from '../identity/legacy';
 
 export const ARCHIVE_FORMAT = 'evermind-archive';
 export const ARCHIVE_VERSION = 1;
@@ -119,6 +120,8 @@ export interface Archive {
   interview?: InterviewTurn[];
   /** The person's verdicts on twin replies ("that's me" / "not me"). */
   fidelity?: FidelityRating[];
+  /** Who may talk to the twin, off-limits topics, and posthumous messages. */
+  legacy?: LegacyPolicy;
 }
 
 export interface InterviewTurn {

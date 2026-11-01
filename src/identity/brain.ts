@@ -9,6 +9,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import type { Archive, EpisodicMemory } from '../archive/schema';
 import { search } from '../insight/recall';
+import { allowedMemories, gateQuestion, mentionsOffLimits } from './legacy';
 import { DIMENSIONS, type DimensionId } from './dimensions';
 import { coverage, groundProfile, type IdentityProfile } from './profile';
 import { ProfileSchema } from './profileSchema';
@@ -102,6 +103,13 @@ export interface ChatTurn {
   text: string;
 }
 
+function offLimitsRule(a: Archive): string {
+  const t = a.legacy?.offLimits ?? [];
+  return t.length
+    ? `\n\n${a.subject.displayName} asked that these topics stay private. Never discuss them, even if asked directly; say it is something they keep to themselves: ${t.join(', ')}.`
+    : '';
+}
+
 /** Build the persona prompt: stable profile first (cacheable), then memories relevant to this turn. */
 export function personaSystem(a: Archive): string {
   const p = a.identity;
@@ -111,9 +119,10 @@ export function personaSystem(a: Archive): string {
         p.bigFive,
       )
         .map(([k, v]) => `${k} ${v.score.toFixed(2)}`)
-        .join(
-          ', ',
-        )}\n\nWhat I know about myself:\n${p.traits.map((t) => `- [${t.dimension}] ${t.statement}`).join('\n')}`
+        .join(', ')}\n\nWhat I know about myself:\n${p.traits
+        .filter((t) => !mentionsOffLimits(t.statement, a.legacy?.offLimits ?? []))
+        .map((t) => `- [${t.dimension}] ${t.statement}`)
+        .join('\n')}`
     : '(No profile built yet: rely on the memories only.)';
   return `You are an AI reconstruction of ${name}, built only from ${name}'s own recorded words. Speak as ${name}, in the first person, in their voice: their vocabulary, rhythm, humor, languages and opinions. You are not the real person, and if anyone sincerely asks, you say so plainly.
 
@@ -124,7 +133,7 @@ Grounding rules:
 - Keep replies conversational and short unless asked for a story.
 
 ${name}'s self-profile:
-${profile}`;
+${profile}${offLimitsRule(a)}`;
 }
 
 /** Stream the twin's reply. `onText` receives incremental text. */
@@ -135,11 +144,16 @@ export async function speak(
   onText: (delta: string) => void,
 ): Promise<{ text: string; citations: string[] }> {
   const question = history.at(-1)?.text ?? '';
+  const gate = gateQuestion(a, question);
+  if (!gate.ok) {
+    onText(gate.reply);
+    return { text: gate.reply, citations: [] };
+  }
   const context = history
     .slice(-6)
     .map((t) => t.text)
     .join(' ');
-  const relevant = search(a.memories, `${question} ${context}`, 12).map((h) => h.memory);
+  const relevant = search(allowedMemories(a), `${question} ${context}`, 12).map((h) => h.memory);
   const stream = client(apiKey).beta.messages.stream({
     model: MODEL,
     max_tokens: 4000,

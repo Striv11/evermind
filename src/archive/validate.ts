@@ -1,4 +1,5 @@
 import { isRating } from '../identity/fidelity';
+import { policyProblem } from '../identity/legacy';
 import { isProfile } from '../identity/profile';
 import { ARCHIVE_FORMAT, ARCHIVE_VERSION, EMOTIONS, type Archive } from './schema';
 
@@ -204,6 +205,12 @@ export function validateArchive(input: unknown): ValidationResult {
         seen.add(r.id);
       });
     }
+  }
+
+  const legacy = input['legacy'];
+  if (legacy !== undefined) {
+    const problem = policyProblem(legacy);
+    if (problem) bad('legacy', problem);
   }
 
   if (issues.length) return { ok: false, issues };

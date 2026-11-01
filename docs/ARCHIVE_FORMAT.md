@@ -32,6 +32,12 @@ Optional fields: `identity` (derived profile), `interview` (questions already as
 (`[{id, question, reply, dimension, verdict: "me"|"not-me", correction?, citations[], ratedAt}]`): the
 subject's verdicts on twin replies. A correction is also stored as a `typed` memory tagged `correction`.
 
+Optional `legacy` (`{access: "owner"|"listed", listeners: [{name, relationship?}], offLimits: string[],
+messages: [{id, to, text, createdAt, releaseOn}]}`) records who may talk to the twin, topics it must never
+discuss and messages released on a date. Like time capsules it is **app-enforced**: conforming readers must
+drop memories touching `offLimits` topics (whole-word, case-insensitive) from the twin's context and refuse
+those questions, but nothing here is cryptographic. Message ids must be unique and `releaseOn` is `YYYY-MM-DD`.
+
 Embeddings and the vector index are **derived data** and are intentionally not part of the archive; they
 are rebuilt from `memories` on import.
 

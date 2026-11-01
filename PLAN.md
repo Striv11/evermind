@@ -42,7 +42,7 @@ Fourteen-day arc (flagship). Every milestone has acceptance criteria that can be
 | Fidelity loop | User rates twin answers ("that's me" / "not me" + correction); corrections become memories; per-dimension fidelity score | [x] |
 | Live conversation | Mic in, streamed reply, cloned voice out, streaming avatar | [ ] |
 | Memory over time | Twin remembers its own conversations; journal mode; profile diff over months | [ ] |
-| Legacy controls | Who may talk to the twin, topics off-limits, posthumous messages | [ ] |
+| Legacy controls | Who may talk to the twin, topics off-limits, posthumous messages | [x] |
 
 ## Stretch
 

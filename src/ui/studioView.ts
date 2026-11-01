@@ -7,6 +7,7 @@ import { answer } from '../insight/recall';
 import type { ChatTurn } from '../identity/brain';
 import { forSpeech } from '../insight/recall';
 import { captureSection } from './captureView';
+import { legacySection } from './legacyView';
 import { rate } from '../identity/fidelity';
 import { THEME_LABELS, THEMES, type Theme } from '../insight/themes';
 import { bestFrame } from '../twin/frame';
@@ -99,6 +100,7 @@ export function studioView(root: HTMLElement): void {
       storySection(refresh),
       memoriesBox,
       twinSection(refresh),
+      legacySection(),
     ),
   );
 }

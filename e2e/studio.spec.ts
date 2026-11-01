@@ -59,6 +59,22 @@ test('fidelity loop: rate a twin reply, correction becomes a memory', async ({ p
   await expect(page.getByTestId('memories')).toContainText('six months of savings');
 });
 
+test('legacy controls: off-limits topic is refused, message stays sealed', async ({ page }) => {
+  await createVault(page);
+  await page.getByTestId('legacy-topic').fill('my divorce');
+  await page.getByTestId('legacy-topic-add').click();
+  await expect(page.getByTestId('legacy-topics')).toContainText('my divorce');
+  await page.getByTestId('ask').fill('Tell me about my divorce');
+  await page.getByTestId('ask').press('Enter');
+  await expect(page.getByTestId('reply')).toContainText('stay private');
+  await page.getByLabel('For', { exact: true }).fill('Maya');
+  await page.getByLabel('Open on').fill('2999-01-01');
+  await page.getByLabel('Message').fill('Be kind.');
+  await page.getByRole('button', { name: 'Seal message' }).click();
+  await expect(page.getByTestId('legacy-messages')).toContainText('(sealed)');
+  await expect(page.getByTestId('legacy-messages')).not.toContainText('Be kind.');
+});
+
 /**
  * Full pipeline on real speech: decode -> on-device Whisper -> emotions/themes ->
  * encrypted vault -> twin answer. Downloads the speech model, so it only runs

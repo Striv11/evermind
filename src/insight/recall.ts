@@ -1,4 +1,5 @@
 import type { Archive, EpisodicMemory } from '../archive/schema';
+import { allowedMemories, gateQuestion } from '../identity/legacy';
 import { tokenize } from './emotions';
 
 const STOP = new Set(
@@ -54,7 +55,9 @@ export interface TwinAnswer {
  * content: it quotes what was said, or says it does not remember.
  */
 export function answer(archive: Archive, question: string, threshold = 0.3): TwinAnswer {
-  const hits = search(archive.memories, question, 2).filter((h) => h.score >= threshold);
+  const gate = gateQuestion(archive, question);
+  if (!gate.ok) return { text: gate.reply, citations: [], abstained: true };
+  const hits = search(allowedMemories(archive), question, 2).filter((h) => h.score >= threshold);
   if (!hits.length)
     return {
       text: "I don't remember talking about that. Tell me about it, and I'll keep it.",

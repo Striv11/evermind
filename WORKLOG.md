@@ -44,3 +44,11 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Learned:** the theme-to-dimension mapping is many-to-many, so a memory tagged family/places/beliefs lands on "Life story" in a tie; fine for a score, but the cues are what keep it accurate for typical questions.
 **Not yet verified:** fidelity with real Claude replies (still no key in CI). Scores are raw shares, not smoothed, so one rating reads as 0% or 100%; the UI shows the count next to it.
 **Next:** live Claude verification with a real key, then live voice conversation, or twin memory of its own conversations.
+
+## 2026-11-01 (later): Legacy controls
+
+**Changed:** New `legacy` policy in the archive (`src/identity/legacy.ts`, validated, documented): an access mode (only me / people I list), off-limits topics, and messages sealed until a release date. Off-limits topics are enforced three ways: questions that mention one are refused before any model call, memories and profile traits that touch one are withheld from retrieval and the persona prompt, and the prompt tells the model to keep them private. The offline retrieval answer obeys the same rules. Studio step 5 edits the policy; sealed messages show only once their date has passed (clock injected in tests).
+**Tests:** 8 new unit tests (word-boundary matching, memory filtering, gating in both answer paths, prompt rule, access, date release and ordering, validation) and an e2e flow on desktop and mobile.
+**Learned:** whole-word matching is deliberately literal: "money" does not block "finances". Synonyms need the user to list them; stated in the UI copy. The policy is app-enforced, not cryptographic, and the UI says so.
+**Not yet verified:** how well the model honours the prompt rule with a real key. The "listed people" access mode is stored and checked by `canTalk`, but nothing yet asks a visitor who they are; that needs a separate read-only twin view (see next).
+**Next:** live Claude verification with a key, a shareable read-only twin view that uses `canTalk`/released messages, or memory over time.
