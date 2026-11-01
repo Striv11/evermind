@@ -2,6 +2,7 @@ import type { Archive } from '../archive/schema';
 import { recordMic } from '../audio/decode';
 import { ingestAudio } from '../insight/pipeline';
 import { DIMENSIONS, dimension, type DimensionId } from '../identity/dimensions';
+import { fidelity } from '../identity/fidelity';
 import { coverage, nextQuestion, type IdentityProfile } from '../identity/profile';
 import { h } from './dom';
 import { keys, runMedia } from './studioView';
@@ -104,6 +105,7 @@ export function captureSection(onChange: () => void): { el: HTMLElement; refresh
           ),
         ),
       ),
+      fidelityView(v.data),
     );
   }
 
@@ -356,5 +358,41 @@ function profileView(p: IdentityProfile, remove: (i: number) => Promise<void>): 
     p.gaps.length
       ? h('p', { class: 'fine' }, 'Still unknown: ' + p.gaps.slice(0, 5).join(' · '))
       : null,
+  );
+}
+
+/** How often the person says the twin sounds like them, per dimension. */
+function fidelityView(a: Archive): HTMLElement {
+  const f = fidelity(a);
+  if (!f.total)
+    return h(
+      'p',
+      { class: 'fine', 'data-testid': 'fidelity' },
+      'Twin fidelity: no ratings yet. Talk to your twin in step 4 and mark each reply “That’s me” or “Not me”.',
+    );
+  return h(
+    'div',
+    { 'data-testid': 'fidelity' },
+    h(
+      'p',
+      {},
+      h('span', { class: 'big', 'data-testid': 'fidelity-overall' }, pct(f.overall ?? 0)),
+      h('span', {}, ` of ${f.total} twin replies sounded like you`),
+    ),
+    h(
+      'ul',
+      { class: 'dims' },
+      ...f.dimensions
+        .filter((d) => d.score !== null)
+        .map((d) =>
+          h(
+            'li',
+            {},
+            h('span', { class: 'dim-label' }, d.label),
+            h('span', { class: 'dim-bar' }, h('span', { style: `width:${pct(d.score ?? 0)}` })),
+            h('span', { class: 'dim-pct' }, `${pct(d.score ?? 0)} (${d.rated})`),
+          ),
+        ),
+    ),
   );
 }

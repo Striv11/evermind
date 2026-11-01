@@ -39,7 +39,7 @@ Fourteen-day arc (flagship). Every milestone has acceptance criteria that can be
 | Identity model | Claude reads all memories and returns a schema-validated profile (summary, Big Five, traits per dimension with evidence and confidence, speech style, phrases, gaps); invented evidence is dropped; user can delete wrong traits | [x] |
 | Twin brain | Streaming multi-turn chat as the person; cites memories [m:id], marks inference, refuses to invent events; voice and video per reply | [x] |
 | Live Claude verification | Run understand / interview / chat against the real API with the user's key and review quality | [ ] |
-| Fidelity loop | User rates twin answers ("that's me" / "not me" + correction); corrections become memories; per-dimension fidelity score | [ ] |
+| Fidelity loop | User rates twin answers ("that's me" / "not me" + correction); corrections become memories; per-dimension fidelity score | [x] |
 | Live conversation | Mic in, streamed reply, cloned voice out, streaming avatar | [ ] |
 | Memory over time | Twin remembers its own conversations; journal mode; profile diff over months | [ ] |
 | Legacy controls | Who may talk to the twin, topics off-limits, posthumous messages | [ ] |

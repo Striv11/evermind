@@ -7,6 +7,7 @@ import { answer } from '../insight/recall';
 import type { ChatTurn } from '../identity/brain';
 import { forSpeech } from '../insight/recall';
 import { captureSection } from './captureView';
+import { rate } from '../identity/fidelity';
 import { THEME_LABELS, THEMES, type Theme } from '../insight/themes';
 import { bestFrame } from '../twin/frame';
 import { DId, ElevenLabs } from '../twin/services';
@@ -97,7 +98,7 @@ export function studioView(root: HTMLElement): void {
       capture.el,
       storySection(refresh),
       memoriesBox,
-      twinSection(),
+      twinSection(refresh),
     ),
   );
 }
@@ -328,7 +329,7 @@ function memoryCard(m: EpisodicMemory, people: Map<string, string>): HTMLElement
   );
 }
 
-function twinSection(): HTMLElement {
+function twinSection(onChange: () => void): HTMLElement {
   const consent = h('input', { type: 'checkbox', id: 'consent', 'data-testid': 'consent' });
   const eleven = h('input', {
     type: 'password',
@@ -435,7 +436,13 @@ function twinSection(): HTMLElement {
   const form = h('form', { class: 'row' }, q, askBtn);
 
   /** One assistant bubble, with buttons to voice it or turn it into video. */
-  const bubble = (text: string, citations: string[], inferredNote: boolean) => {
+  const bubble = (
+    text: string,
+    citations: string[],
+    inferredNote: boolean,
+    question = '',
+    rated = false,
+  ) => {
     const body = h('blockquote', {}, text);
     const media = h('div', { class: 'media' });
     const speakBtn = h('button', { class: 'btn', type: 'button' }, '🔊 In my voice');
@@ -502,6 +509,72 @@ function twinSection(): HTMLElement {
           : '';
     };
     setMeta(citations);
+    const verdictBox = h('div', { class: 'verdict', 'data-testid': 'verdict' });
+    /** "That's me" / "Not me" (+ correction). Shown once the reply is complete. */
+    const showVerdict = (reply: string, cites: string[]) => {
+      const save = async (verdict: 'me' | 'not-me', correction?: string) => {
+        const v = activeVault();
+        if (!v) return;
+        try {
+          const r = rate(v.data, {
+            question,
+            reply,
+            verdict,
+            citations: cites,
+            ...(correction ? { correction } : {}),
+          });
+          await saveArchive(r.archive);
+          verdictBox.replaceChildren(
+            h(
+              'p',
+              { class: 'fine', role: 'status' },
+              r.memory
+                ? 'Thanks. Your correction is now one of your memories.'
+                : verdict === 'me'
+                  ? 'Noted: that sounds like you.'
+                  : 'Noted: that does not sound like you.',
+            ),
+          );
+          onChange();
+        } catch (e) {
+          fail(e);
+        }
+      };
+      const yes = h(
+        'button',
+        { class: 'btn', type: 'button', 'data-testid': 'rate-me' },
+        '✓ That’s me',
+      );
+      const no = h(
+        'button',
+        { class: 'btn', type: 'button', 'data-testid': 'rate-not-me' },
+        '✗ Not me',
+      );
+      const fix = h('textarea', {
+        rows: '3',
+        class: 'answer',
+        'aria-label': 'What you would really say',
+        placeholder: 'What would you really say? (optional, saved as a memory)',
+        'data-testid': 'correction',
+      });
+      const send = h(
+        'button',
+        { class: 'btn primary', type: 'button', 'data-testid': 'rate-send' },
+        'Save',
+      );
+      yes.addEventListener('click', () => void save('me'));
+      no.addEventListener('click', () => {
+        verdictBox.replaceChildren(fix, send);
+        fix.focus();
+      });
+      send.addEventListener('click', () => void save('not-me', fix.value));
+      verdictBox.replaceChildren(
+        h('span', { class: 'fine' }, 'Does this sound like you? '),
+        yes,
+        no,
+      );
+    };
+    if (question && text && !rated) showVerdict(text, citations);
     const el = h(
       'div',
       { class: 'turn twin' },
@@ -509,17 +582,24 @@ function twinSection(): HTMLElement {
       body,
       meta,
       h('div', { class: 'cta' }, speakBtn, videoBtn),
+      verdictBox,
       media,
     );
-    return { el, body, setMeta };
+    return { el, body, setMeta, showVerdict };
   };
 
   const renderHistory = () =>
     reply.replaceChildren(
-      ...chat.map(({ turn, citations }) =>
+      ...chat.map(({ turn, citations }, i) =>
         turn.role === 'user'
           ? h('div', { class: 'turn you' }, h('p', {}, turn.text))
-          : bubble(turn.text, citations, !!keys.anthropic).el,
+          : bubble(
+              turn.text,
+              citations,
+              !!keys.anthropic,
+              chat[i - 1]?.turn.text ?? '',
+              !!activeVault()?.data.fidelity?.some((r) => r.reply === turn.text),
+            ).el,
       ),
     );
   renderHistory();
@@ -536,10 +616,10 @@ function twinSection(): HTMLElement {
       // Offline: quote recorded memories only.
       const a = answer(v.data, text);
       chat.push({ turn: { role: 'assistant', text: a.text }, citations: a.citations });
-      reply.append(bubble(a.text, a.citations, false).el);
+      reply.append(bubble(a.text, a.citations, false, text).el);
       return;
     }
-    const b = bubble('', [], true);
+    const b = bubble('', [], true, text);
     b.body.textContent = '…';
     reply.append(b.el);
     askBtn.disabled = true;
@@ -559,6 +639,7 @@ function twinSection(): HTMLElement {
         );
         chat.push({ turn: { role: 'assistant', text: r.text }, citations: r.citations });
         b.setMeta(r.citations);
+        b.showVerdict(r.text, r.citations);
       } catch (e) {
         b.body.textContent = '';
         chat.pop();

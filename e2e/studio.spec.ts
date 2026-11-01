@@ -43,6 +43,22 @@ test('studio: empty state, honest abstention, consent gate', async ({ page }) =>
   await expect(page.getByTestId('reply')).toContainText('AI reconstruction');
 });
 
+test('fidelity loop: rate a twin reply, correction becomes a memory', async ({ page }) => {
+  await createVault(page);
+  await expect(page.getByTestId('fidelity')).toContainText('no ratings yet');
+  await page.getByTestId('ask').fill('Should I quit my job?');
+  await page.getByTestId('ask').press('Enter');
+  await expect(page.getByTestId('reply')).toContainText("I don't remember");
+  await page.getByTestId('rate-not-me').click();
+  await page
+    .getByTestId('correction')
+    .fill('I would never quit without six months of savings in the bank.');
+  await page.getByTestId('rate-send').click();
+  await expect(page.getByTestId('verdict')).toContainText('now one of your memories');
+  await expect(page.getByTestId('fidelity-overall')).toHaveText('0%');
+  await expect(page.getByTestId('memories')).toContainText('six months of savings');
+});
+
 /**
  * Full pipeline on real speech: decode -> on-device Whisper -> emotions/themes ->
  * encrypted vault -> twin answer. Downloads the speech model, so it only runs

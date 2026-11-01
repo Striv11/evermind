@@ -36,3 +36,11 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Tests:** 52 unit tests, including the brain against a faked HTTP layer (request shape, structured format, fallbacks, streaming, citation filtering) and a compile-time check that the model schema matches the stored profile type. E2E on desktop and mobile: capture map → typed answer → coverage rises → memory appears.
 **Not yet verified:** live Claude calls (no key in CI); the first real run with the user's key is the test.
 **Next:** fidelity loop, live voice conversation, twin memory, legacy controls.
+
+## 2026-11-01: Fidelity loop
+
+**Changed:** Every twin reply now asks "Does this sound like you?" with "That's me" / "Not me". "Not me" opens a box for what the person would really say; that text is saved as a `typed` memory tagged `correction`, so the next reply and the next profile build can use it. Verdicts are stored in the archive (`fidelity`, validated, documented in `ARCHIVE_FORMAT.md`). Each question is assigned to one of the 12 dimensions (wording cues first, then themes of the question and cited memories), and the capture panel shows the share of "that's me" overall and per dimension. Code is in `src/identity/fidelity.ts`.
+**Tests:** 6 new unit tests (classification, rating with and without correction, citation filtering, scores, archive validation incl. duplicates) and an e2e flow on desktop and mobile (ask, mark not-me, correct, see the memory and 0% fidelity).
+**Learned:** the theme-to-dimension mapping is many-to-many, so a memory tagged family/places/beliefs lands on "Life story" in a tie; fine for a score, but the cues are what keep it accurate for typical questions.
+**Not yet verified:** fidelity with real Claude replies (still no key in CI). Scores are raw shares, not smoothed, so one rating reads as 0% or 100%; the UI shows the count next to it.
+**Next:** live Claude verification with a real key, then live voice conversation, or twin memory of its own conversations.
