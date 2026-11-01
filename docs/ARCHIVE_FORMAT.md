@@ -20,13 +20,17 @@ that). Source of truth for types: [`src/archive/schema.ts`](../src/archive/schem
 | `createdAt`     | ISO 8601                | Export time.                                                             |
 | `subject`       | `{displayName, isFictional}` | Whose data this is. `isFictional` is true for the demo persona.     |
 | `aiDisclosure`  | string, non-empty       | The statement that any twin built from this is an AI reconstruction.     |
-| `sources`       | `Source[]`              | Where data came from: `markdown`, `whatsapp`, `telegram`, `mbox`, `interview`, `audio`, `demo`. |
+| `sources`       | `Source[]`              | Where data came from: `markdown`, `whatsapp`, `telegram`, `mbox`, `interview`, `audio`, `typed`, `demo`. |
 | `people`        | `Person[]`              | `{id, name, relation?}`.                                                 |
 | `memories`      | `EpisodicMemory[]`      | Dated events: `{id, date, text, sourceId, people?, place?, tags?, emotions?, themes?, span?}`. `emotions` is `[{label, score 0..1}]`, strongest first; `span` is `{start, end}` seconds within an audio source. |
 | `facts`         | `SemanticFact[]`        | Knowledge-graph triples: `{id, subject, predicate, object, confidence 0..1, sourceIds}`. |
 | `voiceSamples`  | `VoiceSample[]`         | Only the subject's own words: `{id, text, sourceId, date?}`.             |
 | `capsules`      | `TimeCapsule[]`         | `{id, createdAt, unlockAt, to, body}`.                                   |
 | `attachments`   | `AttachmentRef[]`       | `{id, filename, mediaType, bytes, sha256, path}`.                        |
+
+Optional fields: `identity` (derived profile), `interview` (questions already asked) and `fidelity`
+(`[{id, question, reply, dimension, verdict: "me"|"not-me", correction?, citations[], ratedAt}]`): the
+subject's verdicts on twin replies. A correction is also stored as a `typed` memory tagged `correction`.
 
 Embeddings and the vector index are **derived data** and are intentionally not part of the archive; they
 are rebuilt from `memories` on import.

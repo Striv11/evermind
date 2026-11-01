@@ -1,3 +1,4 @@
+import { isRating } from '../identity/fidelity';
 import { isProfile } from '../identity/profile';
 import { ARCHIVE_FORMAT, ARCHIVE_VERSION, EMOTIONS, type Archive } from './schema';
 
@@ -190,6 +191,19 @@ export function validateArchive(input: unknown): ValidationResult {
         if (!isRec(t) || typeof t['question'] !== 'string' || !isIso(t['askedAt']))
           bad(`interview[${i}]`, 'must be {question, dimension, askedAt}');
       });
+  }
+
+  const fid = input['fidelity'];
+  if (fid !== undefined) {
+    if (!Array.isArray(fid)) bad('fidelity', 'must be an array');
+    else {
+      const seen = new Set<string>();
+      fid.forEach((r: unknown, i) => {
+        if (!isRating(r)) return bad(`fidelity[${i}]`, 'must be a valid fidelity rating');
+        if (seen.has(r.id)) bad(`fidelity[${i}].id`, `duplicate id "${r.id}"`);
+        seen.add(r.id);
+      });
+    }
   }
 
   if (issues.length) return { ok: false, issues };

@@ -1,6 +1,7 @@
 /** Evermind Archive Format, version 1. Spec: docs/ARCHIVE_FORMAT.md */
 import type { IdentityProfile } from '../identity/profile';
 import type { DimensionId } from '../identity/dimensions';
+import type { FidelityRating } from '../identity/fidelity';
 
 export const ARCHIVE_FORMAT = 'evermind-archive';
 export const ARCHIVE_VERSION = 1;
@@ -116,6 +117,8 @@ export interface Archive {
   identity?: IdentityProfile;
   /** Interview questions already asked, so the interviewer never repeats itself. */
   interview?: InterviewTurn[];
+  /** The person's verdicts on twin replies ("that's me" / "not me"). */
+  fidelity?: FidelityRating[];
 }
 
 export interface InterviewTurn {
