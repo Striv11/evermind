@@ -97,3 +97,18 @@ test('real speech becomes sorted memories the twin can recall', async ({ page })
   await expect(page.getByTestId('reply')).toContainText(/parathas|kitchen|kindness/i);
   await page.screenshot({ path: 'test-results/studio-real-speech.png', fullPage: true });
 });
+
+test('import: journal files become dated memories, bad files report errors', async ({ page }) => {
+  await createVault(page);
+  await page.getByTestId('doc-files').setInputFiles([
+    {
+      name: '2015-08-01 diary.md',
+      mimeType: 'text/markdown',
+      buffer: Buffer.from('My grandmother taught me patience. I was so grateful.'),
+    },
+    { name: 'notes.pdf', mimeType: 'application/pdf', buffer: Buffer.from('x') },
+  ]);
+  await expect(page.getByTestId('import-log')).toContainText('1 memories imported');
+  await expect(page.getByTestId('import-log')).toContainText('only .md');
+  await expect(page.getByTestId('memories')).toContainText('grandmother taught me patience');
+});

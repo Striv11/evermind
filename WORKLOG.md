@@ -52,3 +52,11 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Learned:** whole-word matching is deliberately literal: "money" does not block "finances". Synonyms need the user to list them; stated in the UI copy. The policy is app-enforced, not cryptographic, and the UI says so.
 **Not yet verified:** how well the model honours the prompt rule with a real key. The "listed people" access mode is stored and checked by `canTalk`, but nothing yet asks a visitor who they are; that needs a separate read-only twin view (see next).
 **Next:** live Claude verification with a key, a shareable read-only twin view that uses `canTalk`/released messages, or memory over time.
+
+## 2026-11-02: Importers I (markdown, journals, Q&A)
+
+**Changed:** New `src/importers`. `markdown.ts` parses `.md`/`.txt` files: front matter (date, title, tags), dates from file names (`2019-03-04`, `20190304`) and from headings ("March 4, 2019", "4th of March 2019", "June 2014"), splitting a journal into one entry per dated heading, `Q:`/`A:` lists with multi-line answers, and markdown stripping. Impossible dates (Feb 30) are rejected. Date precedence: dated heading, then front matter, then file name, then a year/age mentioned in the text, then the import date. `ingest.ts` turns entries into memories (emotions, life areas, people, tags), chunks long entries on paragraph breaks, adds the text as voice samples, and reports per-file errors without aborting the batch. Studio has a drag-and-drop zone with error states.
+**Tests:** 12 new unit tests (formats, precedence, Q&A, errors, chunking, schema validity, no input mutation) and an e2e flow for desktop and mobile.
+**Not yet verified:** the new e2e could not run here (Playwright browsers are not installed in this sandbox); it needs a CI run. Unit tests and `check.sh` pass.
+**Learned:** prettier rewrites a literal BOM in a regex into an invisible character that ESLint rejects; check `charCodeAt(0) === 0xfeff` instead.
+**Next:** day 3 importers (WhatsApp, Telegram JSON, mbox) with author selection so only the user's own messages become voice samples.

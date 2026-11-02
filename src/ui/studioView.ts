@@ -6,6 +6,7 @@ import { ingestAudio } from '../insight/pipeline';
 import { answer } from '../insight/recall';
 import type { ChatTurn } from '../identity/brain';
 import { forSpeech } from '../insight/recall';
+import { importDocuments } from '../importers/ingest';
 import { captureSection } from './captureView';
 import { legacySection } from './legacyView';
 import { rate } from '../identity/fidelity';
@@ -97,11 +98,70 @@ export function studioView(root: HTMLElement): void {
         'Talk about your life. Evermind transcribes it on this device, sorts it by emotion and life area, learns who you are, and keeps it all in your encrypted vault. The capture map shows how much of you is recorded and what to talk about next.',
       ),
       capture.el,
+      importSection(refresh),
       storySection(refresh),
       memoriesBox,
       twinSection(refresh),
       legacySection(),
     ),
+  );
+}
+
+function importSection(onAdded: () => void): HTMLElement {
+  const out = h('ul', { class: 'queue', 'aria-live': 'polite', 'data-testid': 'import-log' });
+  const input = h('input', {
+    type: 'file',
+    id: 'doc-files',
+    accept: '.md,.markdown,.txt,text/plain,text/markdown',
+    multiple: '',
+    'data-testid': 'doc-files',
+  });
+  const zone = h(
+    'div',
+    { class: 'dropzone', 'data-testid': 'dropzone' },
+    h('p', {}, 'Drop journal files here (.md, .txt, or Q: / A: lists), or choose them:'),
+    h('label', { for: 'doc-files', class: 'sr-only' }, 'Choose journal files'),
+    input,
+  );
+  const run = async (list: File[]) => {
+    const v = activeVault();
+    if (!v) return;
+    const files = await Promise.all(
+      list.map(async (f) => ({ name: f.name, content: await f.text() })),
+    );
+    const r = importDocuments(v.data, files);
+    for (const e of r.errors) out.append(h('li', { class: 'error' }, e));
+    if (r.added) {
+      await saveArchive(r.archive);
+      const note = r.undated ? ` ${r.undated} had no date and use today.` : '';
+      out.append(h('li', {}, `${r.added} memories imported and saved.${note}`));
+      onAdded();
+    }
+  };
+  input.addEventListener('change', () => {
+    void run(Array.from(input.files ?? [])).then(() => (input.value = ''));
+  });
+  zone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    zone.classList.add('over');
+  });
+  zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('over');
+    void run(Array.from(e.dataTransfer?.files ?? []));
+  });
+  return h(
+    'section',
+    { class: 'studio-section', 'aria-labelledby': 'import-h' },
+    h('h2', { id: 'import-h' }, 'Import writing you already have'),
+    h(
+      'p',
+      {},
+      'Dates come from front matter, dated headings (“## March 4, 2019”) or the file name. Everything is read on this device.',
+    ),
+    zone,
+    out,
   );
 }
 
