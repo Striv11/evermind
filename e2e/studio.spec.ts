@@ -119,9 +119,11 @@ test('import: WhatsApp export asks who you are and keeps only that author', asyn
     '[12/03/2019, 10:15:32] Anna: My mother taught me to bake bread when I was eight years old and I loved it.',
     '[12/03/2019, 10:16:01] Ben: Secret words that must never be imported.',
   ].join('\n');
-  await page.getByTestId('doc-files').setInputFiles([
-    { name: 'WhatsApp Chat.txt', mimeType: 'text/plain', buffer: Buffer.from(chat) },
-  ]);
+  await page
+    .getByTestId('doc-files')
+    .setInputFiles([
+      { name: 'WhatsApp Chat.txt', mimeType: 'text/plain', buffer: Buffer.from(chat) },
+    ]);
   await page.getByTestId('author-select').selectOption('Anna');
   await page.getByTestId('author-import').click();
   await expect(page.getByTestId('import-log')).toContainText("kept only Anna's messages");
