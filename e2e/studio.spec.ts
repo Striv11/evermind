@@ -130,3 +130,18 @@ test('import: WhatsApp export asks who you are and keeps only that author', asyn
   await expect(page.getByTestId('memories')).toContainText('bake bread');
   await expect(page.getByTestId('memories')).not.toContainText('Secret words');
 });
+
+test('interview is keyboard-first: t types, Ctrl+Enter saves, progress advances', async ({
+  page,
+}) => {
+  await createVault(page);
+  const progress = page.getByTestId('interview-progress');
+  await expect(progress).toContainText('0 of');
+  await page.getByTestId('answer-type').focus();
+  await page.keyboard.press('t');
+  await expect(page.getByTestId('answer-text')).toBeFocused();
+  await page.keyboard.type('My father taught me to fix radios when I was a child.');
+  await page.keyboard.press('Control+Enter');
+  await expect(page.getByTestId('memories')).toContainText('fix radios');
+  await expect(progress).toContainText('1 of');
+});

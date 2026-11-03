@@ -4,7 +4,8 @@ import { validateArchive } from '../archive/validate';
 import { ingestAudio } from '../insight/pipeline';
 import { forSpeech, interviewQuestion, personaSystem, speak, understand } from './brain';
 import { DIMENSIONS } from './dimensions';
-import { coverage, groundProfile, nextQuestion, type IdentityProfile } from './profile';
+import { FACET_QUESTIONS, facetGaps, nextQuestion, progress } from './interview';
+import { coverage, groundProfile, type IdentityProfile } from './profile';
 
 const story = ingestAudio(emptyArchive('Asha'), {
   fileName: 's',
@@ -242,5 +243,52 @@ describe('brain (Claude API, faked HTTP)', () => {
     } finally {
       api.restore();
     }
+  });
+});
+
+describe('guided interview', () => {
+  const withText = (text: string): Archive => ({
+    ...story,
+    memories: [...story.memories, { ...story.memories[0]!, id: 'mem-x', text }],
+  });
+  it('flags facets as covered only when memories mention them', () => {
+    const none = facetGaps(emptyArchive('x'));
+    expect(none.every((g) => !g.covered)).toBe(true);
+    const gaps = facetGaps(withText('I deeply regret not calling my father more often.'));
+    expect(gaps.find((g) => g.facet === 'regret')!.covered).toBe(true);
+    expect(gaps.find((g) => g.facet === 'grief')!.covered).toBe(false);
+  });
+  it('asks about an uncovered facet before a covered one in the same dimension', () => {
+    const empty = emptyArchive('x');
+    const first = nextQuestion(empty)!;
+    expect(first.facet).toBeDefined();
+    const covered = withText('Regret, fear, a lot of grief; I was afraid and I lost my dad.');
+    const q = nextQuestion({ ...covered, memories: covered.memories.slice(-1) })!;
+    const g = facetGaps({ ...covered, memories: covered.memories.slice(-1) });
+    if (q.facet) expect(g.find((x) => x.facet === q.facet)!.covered).toBe(false);
+  });
+  it('is resumable: asked questions persist and the whole bank is eventually exhausted', () => {
+    let a = emptyArchive('x');
+    const seen = new Set<string>();
+    for (let i = 0; i < 500; i++) {
+      const q = nextQuestion(a);
+      if (!q) break;
+      expect(seen.has(q.question)).toBe(false);
+      seen.add(q.question);
+      a = {
+        ...a,
+        interview: [...(a.interview ?? []), { ...q, askedAt: '2026-11-03' }],
+      };
+      expect(validateArchive(a).ok).toBe(true);
+    }
+    expect(nextQuestion(a)).toBeNull();
+    const p = progress(a);
+    expect(p.asked).toBe(p.total);
+    expect(progress(emptyArchive('x')).asked).toBe(0);
+  });
+  it('covers the topics in the brief', () => {
+    const facets = new Set(FACET_QUESTIONS.map((f) => f.facet));
+    for (const f of ['childhood', 'regret', 'places', 'advice for loved ones', 'family'])
+      expect(facets.has(f)).toBe(true);
   });
 });

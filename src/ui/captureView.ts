@@ -3,14 +3,15 @@ import { recordMic } from '../audio/decode';
 import { ingestAudio } from '../insight/pipeline';
 import { DIMENSIONS, dimension, type DimensionId } from '../identity/dimensions';
 import { fidelity } from '../identity/fidelity';
-import { coverage, nextQuestion, type IdentityProfile } from '../identity/profile';
+import { nextQuestion, progress } from '../identity/interview';
+import { coverage, type IdentityProfile } from '../identity/profile';
 import { h } from './dom';
 import { keys, runMedia } from './studioView';
 import { activeVault, saveArchive } from './vaultView';
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
-let current: { dimension: DimensionId; question: string } | null = null;
+let current: { dimension: DimensionId; question: string; facet?: string } | null = null;
 
 /** Step 1 of the Studio: how much of you is captured, the next question, and who Evermind thinks you are. */
 export function captureSection(onChange: () => void): { el: HTMLElement; refresh: () => void } {
@@ -202,8 +203,38 @@ export function captureSection(onChange: () => void): { el: HTMLElement; refresh
       void markAsked().then(loadQuestion);
     });
 
+    const prog = progress(activeVault()!.data);
+    area.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        saveTyped.click();
+      } else if (e.key === 'Escape') {
+        area.hidden = true;
+        saveTyped.hidden = true;
+        typeBtn.focus();
+      }
+    });
+    askBox.onkeydown = (e) => {
+      if (e.target instanceof HTMLTextAreaElement || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 't') {
+        e.preventDefault();
+        typeBtn.click();
+      } else if (e.key === 's') {
+        e.preventDefault();
+        skip.click();
+      }
+    };
     askBox.replaceChildren(
-      h('p', { class: 'eyebrow' }, `Next: ${dimension(q.dimension).label}`),
+      h(
+        'p',
+        { class: 'eyebrow' },
+        `Next: ${dimension(q.dimension).label}${q.facet ? ` · ${q.facet}` : ''}`,
+      ),
+      h(
+        'p',
+        { class: 'fine', 'data-testid': 'interview-progress' },
+        `${prog.asked} of ${prog.total} prepared questions asked. Keys: t type, s skip, Ctrl+Enter save, Esc close.`,
+      ),
       h('p', { class: 'question', 'data-testid': 'question' }, q.question),
       h('div', { class: 'cta' }, rec, typeBtn, skip),
       area,

@@ -127,15 +127,3 @@ export function coverage(a: Archive): { overall: number; dimensions: Coverage[] 
   const overall = Math.round((dims.reduce((s, d) => s + d.score, 0) / dims.length) * 100) / 100;
   return { overall, dimensions: dims };
 }
-
-/** Question for the weakest dimension that has not been asked yet (offline interviewer). */
-export function nextQuestion(a: Archive): { dimension: DimensionId; question: string } | null {
-  const asked = new Set((a.interview ?? []).map((q) => q.question));
-  const ranked = coverage(a).dimensions.sort((x, y) => x.score - y.score);
-  for (const c of ranked) {
-    const d = DIMENSIONS.find((x) => x.id === c.id)!;
-    const q = d.questions.find((q) => !asked.has(q));
-    if (q) return { dimension: d.id, question: q };
-  }
-  return null;
-}

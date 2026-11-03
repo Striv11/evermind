@@ -68,3 +68,10 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Learned:** prettier also inlines `‎` (WhatsApp's LTR mark) and BOM escapes in regexes, which ESLint then rejects as irregular whitespace; use char-code checks or keep escapes out of prettier's reach.
 **Not yet verified:** real exports from phones (only synthetic fixtures); locales with non-numeric dates or Arabic-Indic digits are unsupported and report "No WhatsApp messages found".
 **Next:** day 4 guided life interview (question bank with gap detection, resumable, keyboard-first).
+
+## 2026-11-03 (later): Guided life interview
+
+**Changed:** New `src/identity/interview.ts`: 18 facet-tagged questions (childhood, school, work, places, family, friends, partners, mentors, regret, grief, fear, food, advice, dreams, lessons…) on top of the dimension banks. Gap detection marks a facet covered when the person's own memories mention its cue words; `nextQuestion` takes the weakest dimension, then uncovered facets, then general questions, then covered facets, never repeating. Moved `nextQuestion` out of `profile.ts`. Studio shows the facet, progress ("n of N prepared questions") and keyboard shortcuts (t type, s skip, Ctrl+Enter save, Esc close). Resumability comes from the asked-questions list stored in the encrypted archive; no plaintext drafts are written anywhere.
+**Tests:** 4 new unit tests (facet coverage, ordering, exhaustion/no repeats/schema validity, topic coverage) and an e2e for the keyboard flow (not run here: no Playwright browsers in this sandbox).
+**Learned:** unsaved drafts are deliberately not persisted, since that would put plaintext outside the vault.
+**Next:** day 5 chunking, on-device embeddings and vector index.
