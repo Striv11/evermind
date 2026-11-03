@@ -6,7 +6,9 @@ import { ingestAudio } from '../insight/pipeline';
 import { answer } from '../insight/recall';
 import type { ChatTurn } from '../identity/brain';
 import { forSpeech } from '../insight/recall';
-import { importDocuments } from '../importers/ingest';
+import { detectFormat, listAuthors, parseChat } from '../importers/chat';
+import { importChat, importDocuments } from '../importers/ingest';
+import { ImportError } from '../importers/markdown';
 import { captureSection } from './captureView';
 import { legacySection } from './legacyView';
 import { rate } from '../identity/fidelity';
@@ -112,14 +114,18 @@ function importSection(onAdded: () => void): HTMLElement {
   const input = h('input', {
     type: 'file',
     id: 'doc-files',
-    accept: '.md,.markdown,.txt,text/plain,text/markdown',
+    accept: '.md,.markdown,.txt,.json,.mbox,text/plain,text/markdown,application/json',
     multiple: '',
     'data-testid': 'doc-files',
   });
   const zone = h(
     'div',
     { class: 'dropzone', 'data-testid': 'dropzone' },
-    h('p', {}, 'Drop journal files here (.md, .txt, or Q: / A: lists), or choose them:'),
+    h(
+      'p',
+      {},
+      'Drop journal files (.md, .txt, Q: / A: lists) or chat exports (WhatsApp .txt, Telegram .json, .mbox), or choose them:',
+    ),
     h('label', { for: 'doc-files', class: 'sr-only' }, 'Choose journal files'),
     input,
   );
@@ -129,7 +135,13 @@ function importSection(onAdded: () => void): HTMLElement {
     const files = await Promise.all(
       list.map(async (f) => ({ name: f.name, content: await f.text() })),
     );
-    const r = importDocuments(v.data, files);
+    const docs = files.filter((f) => !detectFormat(f.name, f.content));
+    for (const f of files) {
+      const format = detectFormat(f.name, f.content);
+      if (format) chooseAuthor(f.name, format, f.content);
+    }
+    if (!docs.length) return;
+    const r = importDocuments(v.data, docs);
     for (const e of r.errors) out.append(h('li', { class: 'error' }, e));
     if (r.added) {
       await saveArchive(r.archive);
@@ -137,6 +149,66 @@ function importSection(onAdded: () => void): HTMLElement {
       out.append(h('li', {}, `${r.added} memories imported and saved.${note}`));
       onAdded();
     }
+  };
+  /** Chat exports contain other people's words: ask which author is the user and keep only theirs. */
+  const chooseAuthor = (
+    name: string,
+    format: 'whatsapp' | 'telegram' | 'mbox',
+    content: string,
+  ) => {
+    let authors: ReturnType<typeof listAuthors>;
+    let messages: ReturnType<typeof parseChat>;
+    try {
+      messages = parseChat(format, content);
+      authors = listAuthors(messages);
+    } catch (e) {
+      if (!(e instanceof ImportError)) throw e;
+      out.append(h('li', { class: 'error' }, `${name}: ${e.message}`));
+      return;
+    }
+    if (!authors.length) {
+      out.append(h('li', { class: 'error' }, `${name}: no messages found.`));
+      return;
+    }
+    const select = h('select', {
+      id: `author-${out.children.length}`,
+      'data-testid': 'author-select',
+    });
+    for (const a of authors)
+      select.append(h('option', { value: a.author }, `${a.author} (${a.count} messages)`));
+    const go = h(
+      'button',
+      { type: 'button', class: 'btn', 'data-testid': 'author-import' },
+      'Import only my messages',
+    );
+    const row = h(
+      'li',
+      { class: 'author-pick' },
+      h('label', { for: select.id }, `${name}: which one is you?`),
+      select,
+      go,
+    );
+    go.addEventListener('click', () => {
+      const v = activeVault();
+      if (!v) return;
+      go.disabled = true;
+      const r = importChat(v.data, messages, { format, label: name, self: [select.value] });
+      row.remove();
+      for (const e of r.errors) out.append(h('li', { class: 'error' }, e));
+      if (r.added) {
+        void saveArchive(r.archive).then(() => {
+          out.append(
+            h(
+              'li',
+              {},
+              `${name}: kept only ${select.value}'s messages (${r.added} items). Others were discarded.`,
+            ),
+          );
+          onAdded();
+        });
+      }
+    });
+    out.append(row);
   };
   input.addEventListener('change', () => {
     void run(Array.from(input.files ?? [])).then(() => (input.value = ''));

@@ -60,3 +60,11 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Not yet verified:** the new e2e could not run here (Playwright browsers are not installed in this sandbox); it needs a CI run. Unit tests and `check.sh` pass.
 **Learned:** prettier rewrites a literal BOM in a regex into an invisible character that ESLint rejects; check `charCodeAt(0) === 0xfeff` instead.
 **Next:** day 3 importers (WhatsApp, Telegram JSON, mbox) with author selection so only the user's own messages become voice samples.
+
+## 2026-11-03: Importers II (WhatsApp, Telegram, mbox)
+
+**Changed:** New `src/importers/chat.ts`: WhatsApp text exports (iOS `[d/m/y, time]` and Android `d/m/y, time -` styles, 12/24 h, day-first vs month-first inferred from any component above 12, multi-line messages, system and "media omitted" lines skipped), Telegram `result.json` (rich-text arrays flattened, service messages ignored) and mbox (quoted-printable, base64, RFC 2047 names, multipart/alternative, quoted replies and signatures stripped). `detectFormat` routes dropped files; `importChat` keeps only the author the user picks: every own message is a `VoiceSample`, days with at least 25 words also become memories. Other people's text never enters the archive. Studio shows an author picker (message counts) for each chat file.
+**Tests:** 11 new unit tests including a 1 MB WhatsApp fixture parsed under the 500 ms budget, schema validity after import, and a check that the other author's text is absent. Added an e2e for the author picker (not run here: no Playwright browsers in this sandbox).
+**Learned:** prettier also inlines `‎` (WhatsApp's LTR mark) and BOM escapes in regexes, which ESLint then rejects as irregular whitespace; use char-code checks or keep escapes out of prettier's reach.
+**Not yet verified:** real exports from phones (only synthetic fixtures); locales with non-numeric dates or Arabic-Indic digits are unsupported and report "No WhatsApp messages found".
+**Next:** day 4 guided life interview (question bank with gap detection, resumable, keyboard-first).
