@@ -122,4 +122,33 @@ describe('semantic search over the demo persona', () => {
     expect(idx.size).toBeGreaterThan(1);
     expect(await idx.search('lighthouse', 5)).toHaveLength(1);
   });
+
+  it('snapshots round-trip and reuse vectors for unchanged chunks', async () => {
+    const emb = new HashingEmbedder();
+    const mems = demoArchive().memories.slice(0, 6);
+    const first = await SemanticIndex.build(mems, emb);
+    expect(first.reused).toBe(0);
+    const snap = JSON.parse(JSON.stringify(first.snapshot()));
+
+    const again = await SemanticIndex.build(mems, emb, { cache: snap });
+    expect(again.reused).toBe(again.size);
+    expect((await again.search('lighthouse', 3)).map((h) => h.memoryId)).toEqual(
+      (await first.search('lighthouse', 3)).map((h) => h.memoryId),
+    );
+
+    const edited = [
+      { ...mems[0]!, text: 'A brand new memory about bees and honey.' },
+      ...mems.slice(1),
+    ];
+    const partial = await SemanticIndex.build(edited, emb, { cache: snap });
+    expect(partial.reused).toBeGreaterThan(0);
+    expect(partial.reused).toBeLessThan(partial.size);
+  });
+
+  it('ignores a snapshot from a different embedder', async () => {
+    const mems = demoArchive().memories.slice(0, 3);
+    const snap = (await SemanticIndex.build(mems, new HashingEmbedder(256))).snapshot();
+    const idx = await SemanticIndex.build(mems, new HashingEmbedder(512), { cache: snap });
+    expect(idx.reused).toBe(0);
+  });
 });

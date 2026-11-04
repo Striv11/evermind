@@ -83,3 +83,10 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Learned:** HNSW with plain nearest-neighbour link selection reached 1.0 recall on uniform vectors and on queries from the data's clusters, but only ~0.57 for queries far from every cluster. Real queries sit near the data, so I tested that, but the diversity heuristic from the paper would make it more robust.
 **Not yet verified:** the neural worker has not been run (no browser or model download in this sandbox), so recall figures are for the hashing embedder only. Not done from day 5: progress UI, persisting the index in the vault, and nothing in the app calls `SemanticIndex` yet. Day 5 is marked partial (`[~]`) in PLAN.md.
 **Next:** finish day 5 (wire embedding progress into Studio, persist vectors encrypted in the vault, neural recall numbers), consider the HNSW neighbour heuristic; then day 6.
+
+## 2026-11-04 (later): Index snapshots and incremental embedding
+
+**Changed:** `SemanticIndex.snapshot()` returns a JSON-serializable `IndexSnapshot` (chunks plus base64 float32 vectors, tagged with embedder name and dimension). `SemanticIndex.build(..., { cache })` reuses vectors for chunks whose text is unchanged and only embeds the rest; `reused` reports how many. A snapshot from a different embedder or dimension is ignored.
+**Tests:** 2 new unit tests (JSON round-trip gives identical search results; editing one memory re-embeds only its chunks; mismatched embedder reuses nothing). 102 tests pass.
+**Not done (day 5 stays `[~]`):** the snapshot is not yet written to the vault, since the vault encrypts a single archive blob and a second sealed record needs an envelope design. Also still missing: the Studio progress UI, neural recall numbers (the worker has not been run here) and the HNSW diversity heuristic. Nothing in the app calls `SemanticIndex` yet.
+**Next:** vault side-record for the snapshot (same key, separate AAD), wire progress into Studio, then finish day 5 and start day 6.
