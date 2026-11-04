@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "bench:recall": "BENCH=1 vitest run src/retrieval --reporter verbose"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

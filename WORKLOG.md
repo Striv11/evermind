@@ -75,3 +75,11 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Tests:** 4 new unit tests (facet coverage, ordering, exhaustion/no repeats/schema validity, topic coverage) and an e2e for the keyboard flow (not run here: no Playwright browsers in this sandbox).
 **Learned:** unsaved drafts are deliberately not persisted, since that would put plaintext outside the vault.
 **Next:** day 5 chunking, on-device embeddings and vector index.
+
+## 2026-11-04: Chunking, embeddings, vector index (core)
+
+**Changed:** New `src/retrieval`. `chunk.ts` splits memories on sentence boundaries into overlapping chunks (default 80 words, 15 overlap) carrying memory id, date and people. `vector.ts` has one `VectorIndex` interface with an exact `FlatIndex` and a seeded, deterministic `HnswIndex`; `createIndex` picks HNSW above 2000 vectors. `embed.ts` defines `Embedder` plus a dependency-free `HashingEmbedder` (hashed unigrams/bigrams, light stemming); `embed.worker.ts` + `neural.ts` run all-MiniLM-L6-v2 (q8) via transformers.js in a worker with download/batch progress. `search.ts` (`SemanticIndex`) builds chunks, embeds, indexes and returns hits de-duplicated per memory. A 16-question paraphrased eval set on the demo persona lives in `evalset.ts`; `npm run bench:recall` prints recall@1/@5.
+**Tests:** 7 new unit tests (chunk caps/overlap/coverage, flat exactness, HNSW recall@10 >= 0.9 vs exact on 1500 clustered vectors and determinism, demo recall@5 = 1.0, recall@1 >= 0.7, per-memory de-dup).
+**Learned:** HNSW with plain nearest-neighbour link selection reached 1.0 recall on uniform vectors and on queries from the data's clusters, but only ~0.57 for queries far from every cluster. Real queries sit near the data, so I tested that, but the diversity heuristic from the paper would make it more robust.
+**Not yet verified:** the neural worker has not been run (no browser or model download in this sandbox), so recall figures are for the hashing embedder only. Not done from day 5: progress UI, persisting the index in the vault, and nothing in the app calls `SemanticIndex` yet. Day 5 is marked partial (`[~]`) in PLAN.md.
+**Next:** finish day 5 (wire embedding progress into Studio, persist vectors encrypted in the vault, neural recall numbers), consider the HNSW neighbour heuristic; then day 6.
