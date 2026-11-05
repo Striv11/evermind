@@ -19,6 +19,13 @@ export interface VaultEnvelope {
   ciphertext: string; // base64, includes the GCM tag
 }
 
+/** An encrypted side record (e.g. the vector index) sealed under the vault key. */
+export interface SealedRecord {
+  name: string;
+  iv: string; // base64, 12 bytes
+  ciphertext: string; // base64
+}
+
 export class VaultError extends Error {
   constructor(
     public readonly code: 'wrong-passphrase' | 'tampered' | 'malformed' | 'locked',
@@ -86,6 +93,14 @@ function aad(
   );
 }
 
+/** Record AAD = envelope header AAD + record name, so records cannot be swapped or renamed. */
+function recordAad(
+  h: Pick<VaultEnvelope, 'format' | 'version' | 'kdf' | 'check'>,
+  name: string,
+): Uint8Array<ArrayBuffer> {
+  return enc.encode(JSON.stringify(['record', name, [...aad(h)]]));
+}
+
 async function seal(
   key: CryptoKey,
   header: Omit<VaultEnvelope, 'iv' | 'ciphertext'>,
@@ -104,6 +119,10 @@ export interface UnlockedVault<T> {
   readonly data: T;
   /** Re-encrypt with a fresh IV and return the new envelope to persist. */
   save(data: T): Promise<VaultEnvelope>;
+  /** Encrypt a named side record. Bound to this vault's header and to `name` via AAD. */
+  sealRecord(name: string, data: unknown): Promise<SealedRecord>;
+  /** Decrypt a side record; throws `tampered` if it was altered, renamed or from another vault. */
+  openRecord<R>(record: SealedRecord): Promise<R>;
   /** Drop the key and data reference. The session is unusable afterwards. */
   lock(): void;
   readonly isLocked: boolean;
@@ -128,6 +147,37 @@ function session<T>(
       if (!k) throw new VaultError('locked', 'vault is locked');
       current = data;
       return seal(k, header, data);
+    },
+    async sealRecord(name: string, data: unknown) {
+      if (!k) throw new VaultError('locked', 'vault is locked');
+      const iv = rand(12);
+      const ct = await subtle().encrypt(
+        { name: 'AES-GCM', iv, additionalData: recordAad(header, name) },
+        k,
+        enc.encode(JSON.stringify(data)),
+      );
+      return { name, iv: b64.encode(iv), ciphertext: b64.encode(new Uint8Array(ct)) };
+    },
+    async openRecord<R>(record: SealedRecord) {
+      if (!k) throw new VaultError('locked', 'vault is locked');
+      let iv: Uint8Array<ArrayBuffer>, ct: Uint8Array<ArrayBuffer>;
+      try {
+        iv = b64.decode(record.iv);
+        ct = b64.decode(record.ciphertext);
+      } catch {
+        throw new VaultError('malformed', 'invalid base64 in sealed record');
+      }
+      if (iv.length !== 12) throw new VaultError('malformed', 'invalid IV length');
+      try {
+        const plain = await subtle().decrypt(
+          { name: 'AES-GCM', iv, additionalData: recordAad(header, record.name) },
+          k,
+          ct,
+        );
+        return JSON.parse(dec.decode(plain)) as R;
+      } catch {
+        throw new VaultError('tampered', `record "${record.name}" failed authentication`);
+      }
     },
     lock() {
       k = null;

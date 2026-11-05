@@ -5,6 +5,9 @@ import { chunkMemory } from './chunk';
 import { HashingEmbedder } from './embed';
 import { DEMO_EVAL } from './evalset';
 import { SemanticIndex } from './search';
+import { loadIndexSnapshot, saveIndexSnapshot } from './persist';
+import { createVault } from '../vault/vault';
+import { MemoryStorage } from '../vault/storage';
 import { FlatIndex, HnswIndex, normalize } from './vector';
 
 const mem = (text: string, extra: Partial<EpisodicMemory> = {}): EpisodicMemory => ({
@@ -150,5 +153,37 @@ describe('semantic search over the demo persona', () => {
     const snap = (await SemanticIndex.build(mems, new HashingEmbedder(256))).snapshot();
     const idx = await SemanticIndex.build(mems, new HashingEmbedder(512), { cache: snap });
     expect(idx.reused).toBe(0);
+  });
+
+  it('persists the index encrypted in the vault and reuses it after reload', async () => {
+    const emb = new HashingEmbedder();
+    const mems = demoArchive().memories.slice(0, 6);
+    const storage = new MemoryStorage();
+    const { vault } = await createVault('pw', {}, 1000);
+    expect(await loadIndexSnapshot(vault, storage)).toBeNull();
+
+    const built = await SemanticIndex.build(mems, emb);
+    await saveIndexSnapshot(vault, storage, built.snapshot());
+    const stored = JSON.stringify(await storage.loadRecord('vector-index'));
+    expect(stored).not.toContain(mems[0]!.text.slice(0, 20));
+
+    const cache = await loadIndexSnapshot(vault, storage);
+    const again = await SemanticIndex.build(mems, emb, { cache });
+    expect(again.reused).toBe(again.size);
+  });
+
+  it('treats a corrupt stored index as absent so it is simply rebuilt', async () => {
+    const storage = new MemoryStorage();
+    const { vault } = await createVault('pw', {}, 1000);
+    const snap = (
+      await SemanticIndex.build(demoArchive().memories.slice(0, 2), new HashingEmbedder())
+    ).snapshot();
+    await saveIndexSnapshot(vault, storage, snap);
+    const rec = (await storage.loadRecord('vector-index'))!;
+    await storage.storeRecord({
+      ...rec,
+      ciphertext: rec.ciphertext.replace(/^./, (c) => (c === 'A' ? 'B' : 'A')),
+    });
+    expect(await loadIndexSnapshot(vault, storage)).toBeNull();
   });
 });

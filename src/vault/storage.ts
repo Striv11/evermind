@@ -1,14 +1,25 @@
-import type { VaultEnvelope } from './vault';
+import type { SealedRecord, VaultEnvelope } from './vault';
 
 /** Where the (already encrypted) envelope lives. Plaintext never touches storage. */
 export interface VaultStorage {
   load(): Promise<VaultEnvelope | null>;
   store(envelope: VaultEnvelope): Promise<void>;
+  /** Encrypted side records (e.g. the vector index), stored next to the envelope. */
+  loadRecord(name: string): Promise<SealedRecord | null>;
+  storeRecord(record: SealedRecord): Promise<void>;
+  /** Removes the envelope and every side record. */
   wipe(): Promise<void>;
 }
 
 export class MemoryStorage implements VaultStorage {
   private value: VaultEnvelope | null = null;
+  private records = new Map<string, SealedRecord>();
+  async loadRecord(name: string) {
+    return this.records.get(name) ?? null;
+  }
+  async storeRecord(r: SealedRecord) {
+    this.records.set(r.name, r);
+  }
   async load() {
     return this.value;
   }
@@ -17,12 +28,14 @@ export class MemoryStorage implements VaultStorage {
   }
   async wipe() {
     this.value = null;
+    this.records.clear();
   }
 }
 
 const DB = 'evermind';
 const STORE = 'vault';
 const KEY = 'envelope';
+const RECORD_PREFIX = 'record:';
 
 export class IndexedDbStorage implements VaultStorage {
   private open(): Promise<IDBDatabase> {
@@ -54,7 +67,16 @@ export class IndexedDbStorage implements VaultStorage {
   async store(e: VaultEnvelope) {
     await this.run('readwrite', (s) => s.put(e, KEY));
   }
+  async loadRecord(name: string) {
+    return (
+      ((await this.run('readonly', (s) => s.get(RECORD_PREFIX + name))) as
+        SealedRecord | undefined) ?? null
+    );
+  }
+  async storeRecord(r: SealedRecord) {
+    await this.run('readwrite', (s) => s.put(r, RECORD_PREFIX + r.name));
+  }
   async wipe() {
-    await this.run('readwrite', (s) => s.delete(KEY));
+    await this.run('readwrite', (s) => s.clear());
   }
 }

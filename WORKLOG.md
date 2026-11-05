@@ -90,3 +90,11 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Tests:** 2 new unit tests (JSON round-trip gives identical search results; editing one memory re-embeds only its chunks; mismatched embedder reuses nothing). 102 tests pass.
 **Not done (day 5 stays `[~]`):** the snapshot is not yet written to the vault, since the vault encrypts a single archive blob and a second sealed record needs an envelope design. Also still missing: the Studio progress UI, neural recall numbers (the worker has not been run here) and the HNSW diversity heuristic. Nothing in the app calls `SemanticIndex` yet.
 **Next:** vault side-record for the snapshot (same key, separate AAD), wire progress into Studio, then finish day 5 and start day 6.
+
+## 2026-11-05: Vault side-records for the vector index
+
+**Changed:** The vault can now seal named side records (`sealRecord`/`openRecord`) under the same AES-GCM key. AAD is the envelope header AAD plus the record name, so a record cannot be renamed, moved to another vault, or confused with the main archive ciphertext. `VaultStorage` gained `loadRecord`/`storeRecord`; `wipe()` now clears the IndexedDB store, so records go with the envelope. New `src/retrieval/persist.ts` saves and loads the `IndexSnapshot` through it; a corrupt or foreign record loads as `null` (the index is derived data, so the caller just re-embeds).
+**Tests:** 7 new (record round-trip, no plaintext, re-unlock, rename/modify/foreign-vault rejection, fresh IVs, locked, wipe, envelope ciphertext not openable as record, persisted index reuse, corrupt record falls back). 109 pass.
+**Not done (day 5 stays `[~]`):** nothing in the UI calls `saveIndexSnapshot`/`SemanticIndex` yet; Studio embedding progress UI; neural recall numbers (worker not run here); HNSW diversity heuristic.
+**Next:** wire the index into the app (build on unlock with cache, save after archive changes, progress bar), then day 6.
+

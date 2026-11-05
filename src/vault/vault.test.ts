@@ -88,3 +88,53 @@ describe('vault', () => {
     expect(await store.load()).toBeNull();
   });
 });
+
+describe('sealed records', () => {
+  it('round-trips a record and keeps plaintext out of it', async () => {
+    const { vault } = await createVault('pw', data, ITER);
+    const rec = await vault.sealRecord('idx', { secret: 'cardamom' });
+    expect(JSON.stringify(rec)).not.toContain('cardamom');
+    expect(await vault.openRecord(rec)).toEqual({ secret: 'cardamom' });
+  });
+
+  it('opens with the same passphrase after re-unlocking', async () => {
+    const { envelope, vault } = await createVault('pw', data, ITER);
+    const rec = await vault.sealRecord('idx', [1, 2]);
+    const again = await unlockVault(envelope, 'pw');
+    expect(await again.openRecord(rec)).toEqual([1, 2]);
+  });
+
+  it('rejects renamed, modified or foreign records', async () => {
+    const { vault } = await createVault('pw', data, ITER);
+    const other = await createVault('pw', data, ITER);
+    const rec = await vault.sealRecord('idx', { a: 1 });
+    await expectCode(vault.openRecord({ ...rec, name: 'other' }), 'tampered');
+    const ct = b64.decode(rec.ciphertext);
+    ct[0] = (ct[0] ?? 0) ^ 1;
+    await expectCode(vault.openRecord({ ...rec, ciphertext: b64.encode(ct) }), 'tampered');
+    await expectCode(other.vault.openRecord(rec), 'tampered');
+  });
+
+  it('uses a fresh IV, refuses when locked, and wipe removes records', async () => {
+    const store = new MemoryStorage();
+    const { vault } = await createVault('pw', data, ITER);
+    const a = await vault.sealRecord('idx', 1);
+    const b = await vault.sealRecord('idx', 1);
+    expect(a.iv).not.toBe(b.iv);
+    await store.storeRecord(a);
+    expect(await store.loadRecord('idx')).toEqual(a);
+    await store.wipe();
+    expect(await store.loadRecord('idx')).toBeNull();
+    vault.lock();
+    await expectCode(vault.sealRecord('idx', 1), 'locked');
+    await expectCode(vault.openRecord(a), 'locked');
+  });
+
+  it('a main-envelope ciphertext cannot be opened as a record', async () => {
+    const { envelope, vault } = await createVault('pw', data, ITER);
+    await expectCode(
+      vault.openRecord({ name: 'idx', iv: envelope.iv, ciphertext: envelope.ciphertext }),
+      'tampered',
+    );
+  });
+});
