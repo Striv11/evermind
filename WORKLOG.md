@@ -98,3 +98,10 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Not done (day 5 stays `[~]`):** nothing in the UI calls `saveIndexSnapshot`/`SemanticIndex` yet; Studio embedding progress UI; neural recall numbers (worker not run here); HNSW diversity heuristic.
 **Next:** wire the index into the app (build on unlock with cache, save after archive changes, progress bar), then day 6.
 
+
+## 2026-11-06: Index wired into the app
+
+**Changed:** New `src/retrieval/sync.ts` (`syncIndex`): loads the encrypted snapshot, embeds only changed chunks, saves the snapshot when the index changed (including removals). The unlocked vault panel now shows a search box with an indexing progress bar; the index is built on first view per session (hashing embedder) and reused from the vault afterwards. Lock clears the in-memory index. Day 5 ticked off.
+**Tests:** 3 new unit tests (first build then full reuse; one edited memory re-embeds only its chunks; removal shrinks the stored index with zero embedding).
+**Not verified:** the search UI has no e2e and was not run in a browser here; the neural MiniLM embedder is still not wired into the UI or benchmarked (worker never run in this sandbox), and the HNSW diversity heuristic is not done. Day 5 is ticked on the basis of the hashing embedder; neural numbers remain open.
+**Next:** day 6 knowledge graph and timeline/graph visualizations.

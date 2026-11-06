@@ -2,6 +2,9 @@ import { emptyArchive, type Archive } from '../archive/schema';
 import { validateArchive } from '../archive/validate';
 import { IndexedDbStorage, type VaultStorage } from '../vault/storage';
 import { createVault, unlockVault, VaultError, type UnlockedVault } from '../vault/vault';
+import { HashingEmbedder } from '../retrieval/embed';
+import type { SemanticIndex } from '../retrieval/search';
+import { syncIndex } from '../retrieval/sync';
 import { h } from './dom';
 
 let session: UnlockedVault<Archive> | null = null;
@@ -9,6 +12,72 @@ let session: UnlockedVault<Archive> | null = null;
 export function lockSession(): void {
   session?.lock();
   session = null;
+  semantic = null;
+}
+
+let semantic: SemanticIndex | null = null;
+
+/** Search panel: builds (or loads) the encrypted vector index, then searches by meaning. */
+function searchPanel(storage: VaultStorage, a: Archive): HTMLElement {
+  const status = h('p', { class: 'fine', role: 'status', 'data-testid': 'index-status' });
+  const bar = h('progress', { max: '100', value: '0', 'aria-label': 'Indexing progress' });
+  const input = h('input', {
+    type: 'search',
+    placeholder: 'Search your memories by meaning…',
+    'aria-label': 'Search memories',
+    disabled: '',
+    'data-testid': 'memory-search',
+  }) as HTMLInputElement;
+  const results = h('ol', { class: 'results', 'data-testid': 'search-results' });
+  const root = h('section', {}, h('h2', {}, 'Search'), input, status, bar, results);
+  if (!a.memories.length) {
+    root.replaceChildren(
+      h('h2', {}, 'Search'),
+      h('p', { class: 'fine' }, 'Add memories to search them.'),
+    );
+    return root;
+  }
+  const ready = (idx: SemanticIndex, note: string) => {
+    semantic = idx;
+    bar.remove();
+    status.textContent = note;
+    input.disabled = false;
+  };
+  const start = async () => {
+    const v = session!;
+    status.textContent = 'Indexing on this device…';
+    try {
+      const r = await syncIndex(v, storage, new HashingEmbedder(), (pct) => (bar.value = pct));
+      ready(r.index, `Indexed ${r.index.size} passages (${r.reused} reused, ${r.embedded} new).`);
+    } catch {
+      bar.remove();
+      status.textContent = 'Indexing failed. Lock and unlock to retry.';
+    }
+  };
+  if (semantic) ready(semantic, `Indexed ${semantic.size} passages.`);
+  else void start();
+  let seq = 0;
+  input.addEventListener('input', () => {
+    const q = input.value.trim();
+    const mine = ++seq;
+    if (!q || !semantic) return results.replaceChildren();
+    void semantic.search(q, 5).then((hits) => {
+      if (mine !== seq) return;
+      const byId = new Map(a.memories.map((m) => [m.id, m]));
+      results.replaceChildren(
+        ...hits.map((hit) =>
+          h(
+            'li',
+            {},
+            h('strong', {}, byId.get(hit.memoryId)?.date.slice(0, 10) ?? hit.memoryId),
+            h('p', {}, hit.chunk.text),
+          ),
+        ),
+        ...(hits.length ? [] : [h('li', { class: 'fine' }, 'Nothing close to that.')]),
+      );
+    });
+  });
+  return root;
 }
 
 /** The unlocked vault, if any. */
@@ -156,6 +225,7 @@ function unlockedPanel(storage: VaultStorage, rerender: () => void): HTMLElement
           { class: 'empty', 'data-testid': 'vault-empty' },
           'It is empty. Open the Studio to record or upload your story.',
         ),
+    searchPanel(storage, a),
     h(
       'div',
       { class: 'cta' },
