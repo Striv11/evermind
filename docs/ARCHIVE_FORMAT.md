@@ -23,7 +23,7 @@ that). Source of truth for types: [`src/archive/schema.ts`](../src/archive/schem
 | `sources`       | `Source[]`              | Where data came from: `markdown`, `whatsapp`, `telegram`, `mbox`, `interview`, `audio`, `typed`, `demo`. |
 | `people`        | `Person[]`              | `{id, name, relation?}`.                                                 |
 | `memories`      | `EpisodicMemory[]`      | Dated events: `{id, date, text, sourceId, people?, place?, tags?, emotions?, themes?, span?}`. `emotions` is `[{label, score 0..1}]`, strongest first; `span` is `{start, end}` seconds within an audio source. |
-| `facts`         | `SemanticFact[]`        | Knowledge-graph triples: `{id, subject, predicate, object, confidence 0..1, sourceIds}`. |
+| `facts`         | `SemanticFact[]`        | Knowledge-graph triples: `{id, subject, predicate, object, confidence 0..1, sourceIds, memoryIds?}`; `memoryIds` is provenance and must reference existing memories. |
 | `voiceSamples`  | `VoiceSample[]`         | Only the subject's own words: `{id, text, sourceId, date?}`.             |
 | `capsules`      | `TimeCapsule[]`         | `{id, createdAt, unlockAt, to, body}`.                                   |
 | `attachments`   | `AttachmentRef[]`       | `{id, filename, mediaType, bytes, sha256, path}`.                        |

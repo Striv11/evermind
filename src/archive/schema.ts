@@ -67,6 +67,8 @@ export interface SemanticFact {
   object: string;
   confidence: number; // 0..1
   sourceIds: string[];
+  /** Memories this fact was derived from (provenance); optional for hand-written facts. */
+  memoryIds?: string[];
 }
 
 export interface Person {

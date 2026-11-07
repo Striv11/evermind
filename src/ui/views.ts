@@ -1,5 +1,7 @@
 import type { Archive } from '../archive/schema';
 import { h } from './dom';
+import { withExtractedFacts } from '../graph/extract';
+import { graphSection } from './graphView';
 
 const year = (d: string) => d.slice(0, 4);
 
@@ -58,7 +60,8 @@ export function landingView(): HTMLElement {
   );
 }
 
-export function demoView(a: Archive): HTMLElement {
+export function demoView(source: Archive): HTMLElement {
+  const a = withExtractedFacts(source);
   const people = new Map(a.people.map((p) => [p.id, p.name]));
   const memories = [...a.memories].sort((x, y) => x.date.localeCompare(y.date));
   return h(
@@ -95,6 +98,7 @@ export function demoView(a: Archive): HTMLElement {
         ),
       ),
     ),
+    graphSection(a),
     h(
       'section',
       { 'aria-labelledby': 'fx' },
@@ -112,7 +116,7 @@ export function demoView(a: Archive): HTMLElement {
       h(
         'p',
         { class: 'empty' },
-        'Coming on day 6: grounded chat with source citations, locally via WebGPU.',
+        'Coming on day 8: grounded chat with source citations, locally via WebGPU.',
       ),
     ),
   );

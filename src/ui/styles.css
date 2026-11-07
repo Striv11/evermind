@@ -611,3 +611,62 @@ textarea.answer {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+.viz {
+  width: 100%;
+  height: auto;
+  max-height: 440px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: var(--s3);
+}
+.viz text {
+  fill: var(--text);
+  font-size: 11px;
+}
+.viz .axis,
+.viz .edge {
+  stroke: var(--muted, var(--line));
+  stroke-width: 1.5;
+}
+.viz .elabel {
+  font-size: 9px;
+  opacity: 0.75;
+}
+.viz circle {
+  fill: var(--accent);
+}
+.viz .node.person circle {
+  fill: #c2410c;
+}
+.viz .node.place circle {
+  fill: #15803d;
+}
+.viz .node.thing circle {
+  fill: #6b7280;
+}
+.viz g[tabindex] {
+  cursor: pointer;
+}
+.viz g[tabindex]:focus {
+  outline: none;
+}
+.viz g[tabindex]:focus circle,
+.viz g[tabindex]:hover circle {
+  stroke: var(--text);
+  stroke-width: 3;
+}
+.detail {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--s3);
+}
+.linkish {
+  font: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}

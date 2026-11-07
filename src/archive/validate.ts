@@ -159,6 +159,7 @@ export function validateArchive(input: unknown): ValidationResult {
   // Referential integrity (only meaningful when the lists themselves were well-formed).
   const sourceIds = ids.get('sources') ?? new Set<string>();
   const personIds = ids.get('people') ?? new Set<string>();
+  const memoryIds = ids.get('memories') ?? new Set<string>();
   const refSource = (id: unknown, p: string) => {
     if (typeof id === 'string' && !sourceIds.has(id)) bad(p, `unknown source "${id}"`);
   };
@@ -178,6 +179,15 @@ export function validateArchive(input: unknown): ValidationResult {
   facts.forEach((f, i) => {
     if (Array.isArray(f['sourceIds']))
       f['sourceIds'].forEach((id, j) => refSource(id, `facts[${i}].sourceIds[${j}]`));
+    const mids = f['memoryIds'];
+    if (mids !== undefined) {
+      if (!Array.isArray(mids)) bad(`facts[${i}].memoryIds`, 'must be an array');
+      else
+        mids.forEach((id, j) => {
+          if (!memoryIds.has(id as string))
+            bad(`facts[${i}].memoryIds[${j}]`, `unknown memory "${String(id)}"`);
+        });
+    }
   });
   void sources;
   void people;

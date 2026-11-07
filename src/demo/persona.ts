@@ -97,6 +97,7 @@ export function demoArchive(): Archive {
         object: 'lighthouse keeper at Skerry Point',
         confidence: 0.95,
         sourceIds: ['s-journal'],
+        memoryIds: ['m2', 'm5'],
       },
       {
         id: 'f2',
@@ -105,6 +106,7 @@ export function demoArchive(): Archive {
         object: 'showing up matters more than how you feel',
         confidence: 0.85,
         sourceIds: ['s-journal', 's-interview'],
+        memoryIds: ['m2'],
       },
       {
         id: 'f3',
@@ -113,6 +115,7 @@ export function demoArchive(): Archive {
         object: 'bees',
         confidence: 0.9,
         sourceIds: ['s-journal'],
+        memoryIds: ['m6', 'm7'],
       },
       {
         id: 'f4',
@@ -121,6 +124,7 @@ export function demoArchive(): Archive {
         object: 'missing Odile’s wedding',
         confidence: 0.9,
         sourceIds: ['s-interview', 's-chat'],
+        memoryIds: ['m4', 'm8'],
       },
       {
         id: 'f5',
@@ -129,6 +133,7 @@ export function demoArchive(): Archive {
         object: 'Wren',
         confidence: 1,
         sourceIds: ['s-interview'],
+        memoryIds: ['m1'],
       },
       {
         id: 'f6',
@@ -137,6 +142,7 @@ export function demoArchive(): Archive {
         object: 'Wren',
         confidence: 0.9,
         sourceIds: ['s-journal'],
+        memoryIds: ['m3'],
       },
       {
         id: 'f7',

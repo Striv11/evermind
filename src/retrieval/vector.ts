@@ -15,7 +15,7 @@ export function normalize(v: Float32Array): Float32Array {
   return out;
 }
 
-function dot(a: Float32Array, b: Float32Array): number {
+export function dot(a: Float32Array, b: Float32Array): number {
   let s = 0;
   for (let i = 0; i < a.length; i++) s += a[i]! * b[i]!;
   return s;
