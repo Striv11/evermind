@@ -5,6 +5,8 @@ import { createVault, unlockVault, VaultError, type UnlockedVault } from '../vau
 import { HashingEmbedder } from '../retrieval/embed';
 import type { SemanticIndex } from '../retrieval/search';
 import { syncIndex } from '../retrieval/sync';
+import { withExtractedFacts } from '../graph/extract';
+import { graphSection } from './graphView';
 import { h } from './dom';
 
 let session: UnlockedVault<Archive> | null = null;
@@ -226,6 +228,7 @@ function unlockedPanel(storage: VaultStorage, rerender: () => void): HTMLElement
           'It is empty. Open the Studio to record or upload your story.',
         ),
     searchPanel(storage, a),
+    ...(a.memories.length ? [graphSection(withExtractedFacts(a))] : []),
     h(
       'div',
       { class: 'cta' },

@@ -112,3 +112,10 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Tests:** 11 new (extraction with provenance, nothing-invented check, originals untouched and archive still valid, determinism, embedding merge, node kinds and evidence, layout bounds, view click and list fallback in jsdom). 120 pass.
 **Not verified:** no browser here, so the SVG was never looked at visually and there is no e2e. Extraction is English-only and tuned on the demo persona; real journals will need more rules. The graph is only on the demo page, not yet in the unlocked vault view. Day 6 is `[~]` for those reasons.
 **Next:** show the graph for the user's own vault (extract on unlock, store facts), an e2e for the graph, then day 7 style model.
+
+## 2026-11-08: Graph in the unlocked vault
+
+**Changed:** The unlocked vault panel now renders the timeline/graph section for the user's own memories. Facts are extracted in memory on render (`withExtractedFacts`) and not written back, so the archive stays hand-authored and nothing new is persisted. Empty vaults show no graph. Day 6 ticked off.
+**Tests:** 2 new jsdom tests that create, unlock and render a real vault (graph and list fallback present for the demo archive; absent when empty). 122 pass.
+**Not verified:** no browser here, so still no visual check or e2e of the graph. The click in the first test only checks it does not throw. Extraction is English-only and tuned on the demo persona.
+**Next:** day 7 style model (stylometric profile, prompt builder, similarity score).
