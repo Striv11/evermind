@@ -45,7 +45,7 @@ Key invariants:
 - Every twin output is labelled an AI reconstruction; the archive requires `aiDisclosure`.
 - No network calls except static model-weight downloads.
 
-Layout: `src/archive` (schema + validator), `src/graph` (fact extraction, graph, layout), `src/vault` (crypto + storage), `src/demo` (fictional persona),
+Layout: `src/archive` (schema + validator), `src/graph` (fact extraction, graph, layout), `src/style` (stylometric profile, prompt, similarity), `src/vault` (crypto + storage), `src/demo` (fictional persona),
 `src/ui` (views, design system), `e2e` (Playwright), `docs/ARCHIVE_FORMAT.md` (spec).
 
 ## Setup

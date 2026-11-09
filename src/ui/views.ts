@@ -2,6 +2,7 @@ import type { Archive } from '../archive/schema';
 import { h } from './dom';
 import { withExtractedFacts } from '../graph/extract';
 import { graphSection } from './graphView';
+import { styleSection } from './styleView';
 
 const year = (d: string) => d.slice(0, 4);
 
@@ -99,6 +100,7 @@ export function demoView(source: Archive): HTMLElement {
       ),
     ),
     graphSection(a),
+    styleSection(a),
     h(
       'section',
       { 'aria-labelledby': 'fx' },

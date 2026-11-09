@@ -119,3 +119,11 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Tests:** 2 new jsdom tests that create, unlock and render a real vault (graph and list fallback present for the demo archive; absent when empty). 122 pass.
 **Not verified:** no browser here, so still no visual check or e2e of the graph. The click in the first test only checks it does not throw. Extraction is English-only and tuned on the demo persona.
 **Next:** day 7 style model (stylometric profile, prompt builder, similarity score).
+
+## 2026-11-09: Style model
+
+**Changed:** New `src/style/profile.ts`: deterministic stylometric profile (sentence length mean/std, moving-average type/token ratio, punctuation per 100 words, emoji rate, lowercase starts, caps ratio, signature phrases = n-grams shared by >= 2 samples, function-word frequencies). `styleSimilarity` blends function-word cosine with closeness on punctuation/length/emoji habits; `evaluateStyle` holds out every 4th sample and scores it against the profile (and optionally foreign text). `buildStylePrompt` turns the profile into a prompt fragment that keeps the AI-reconstruction disclosure and declines to describe style from < 30 words. New `styleView.ts` viewer shown on the demo page and in the unlocked vault when voice samples exist. Day 7 ticked off.
+**Tests:** 9 new (determinism, feature counts, signature phrases, empty input, held-out own > foreign, bounds, prompt, view). 131 pass.
+**Learned:** Separation on tiny synthetic corpora is easy; the weights in `styleSimilarity` are untuned guesses and the demo persona has only 3 samples, so real accuracy is unmeasured. English-centric word list.
+**Not verified:** viewer not seen in a browser; no e2e.
+**Next:** day 8 retrieval-only grounded chat with citations and abstention.
