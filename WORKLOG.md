@@ -127,3 +127,11 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Learned:** Separation on tiny synthetic corpora is easy; the weights in `styleSimilarity` are untuned guesses and the demo persona has only 3 samples, so real accuracy is unmeasured. English-centric word list.
 **Not verified:** viewer not seen in a browser; no e2e.
 **Next:** day 8 retrieval-only grounded chat with citations and abstention.
+
+## 2026-11-09 (later): Grounded retrieval-only chat
+
+**Changed:** New `src/chat/grounded.ts`: `groundedAnswer` searches the semantic index, keeps only memories above a similarity threshold (0.14), quotes up to two (second only if >= 75% of the top score), and cites memory ids and dates; otherwise replies "I don't remember that." Off-limits topics are refused before retrieval and off-limits memories are filtered out. Every reply, including abstentions, carries an `AI reconstruction` label. Deterministic. New `src/ui/chatView.ts` "Ask" section in the unlocked vault (indexing-not-ready message, thinking and error states, label and citations per reply).
+**Tuned:** with the hashing embedder, in-scope top scores span 0.115-0.40 and 8 out-of-scope questions peak at 0.134, so the ranges overlap. 0.14 abstains on 8/8 out-of-scope and cites the right memory for about 11/16 in-scope questions; I chose abstaining over wrong answers. The test asserts >= 65% and 8/8.
+**Tests:** 6 new (grounding, citations valid and quoted, determinism, empty input, threshold, off-limits, message rendering).
+**Not verified:** UI not run in a browser, no e2e; threshold is for the hashing embedder only and the neural model needs its own tuning. The older BM25 `answer` in the Studio still exists separately.
+**Next:** day 9 WebLLM/WebGPU generation with fallback to this module.

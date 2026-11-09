@@ -45,7 +45,7 @@ Key invariants:
 - Every twin output is labelled an AI reconstruction; the archive requires `aiDisclosure`.
 - No network calls except static model-weight downloads.
 
-Layout: `src/archive` (schema + validator), `src/graph` (fact extraction, graph, layout), `src/style` (stylometric profile, prompt, similarity), `src/vault` (crypto + storage), `src/demo` (fictional persona),
+Layout: `src/archive` (schema + validator), `src/chat` (grounded answers), `src/graph` (fact extraction, graph, layout), `src/style` (stylometric profile, prompt, similarity), `src/vault` (crypto + storage), `src/demo` (fictional persona),
 `src/ui` (views, design system), `e2e` (Playwright), `docs/ARCHIVE_FORMAT.md` (spec).
 
 ## Setup
@@ -64,7 +64,7 @@ npx playwright install chromium && npm run e2e
 Live: **https://striv11.github.io/evermind/**. Open it, press **Try the demo persona** (a fictional
 lighthouse-keeper-turned-beekeeper, "Wren Calloway") to see the timeline and facts. Press **Create my
 vault**, choose a passphrase, lock it, and try a wrong passphrase. Keys: `g d` demo, `g v` vault, `t` theme, `?` help.
-Status: landing, demo shell and vault are live; chat is **planned** (day 8).
+Status: landing, demo shell, vault and retrieval-grounded chat (quotes and cites your memories, abstains otherwise) are live.
 
 ## Design decisions & trade-offs
 

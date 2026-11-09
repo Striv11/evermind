@@ -8,6 +8,7 @@ import { syncIndex } from '../retrieval/sync';
 import { withExtractedFacts } from '../graph/extract';
 import { graphSection } from './graphView';
 import { styleSection } from './styleView';
+import { chatSection } from './chatView';
 import { h } from './dom';
 
 let session: UnlockedVault<Archive> | null = null;
@@ -229,6 +230,7 @@ function unlockedPanel(storage: VaultStorage, rerender: () => void): HTMLElement
           'It is empty. Open the Studio to record or upload your story.',
         ),
     searchPanel(storage, a),
+    ...(a.memories.length ? [chatSection(a, () => semantic)] : []),
     ...(a.memories.length ? [graphSection(withExtractedFacts(a))] : []),
     ...(a.voiceSamples.length ? [styleSection(a)] : []),
     h(

@@ -670,3 +670,25 @@ textarea.answer {
   text-decoration: underline;
   cursor: pointer;
 }
+
+.chat-log {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border, #8884);
+}
+.msg.you {
+  justify-self: end;
+}
+.chat-form {
+  display: flex;
+  gap: 0.5rem;
+}
+.chat-form input {
+  flex: 1;
+}

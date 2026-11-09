@@ -37,3 +37,18 @@ describe('unlocked vault graph', () => {
     lockSession();
   });
 });
+
+describe('chat section', () => {
+  it('labels twin replies and cites memories', async () => {
+    const { messageEl } = await import('./chatView');
+    const el = messageEl('twin', 'text', {
+      aiLabel: 'AI reconstruction',
+      text: 'text',
+      abstained: false,
+      citations: [{ memoryId: 'm2', date: '1990-01-01', score: 0.3 }],
+    });
+    expect(el.querySelector('[data-testid=ai-label]')?.textContent).toBe('AI reconstruction');
+    expect(el.textContent).toContain('m2');
+    expect(messageEl('you', 'hi').querySelector('[data-testid=ai-label]')).toBeNull();
+  });
+});
