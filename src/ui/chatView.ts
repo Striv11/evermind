@@ -1,5 +1,7 @@
 import type { Archive } from '../archive/schema';
+import { generateAnswer, loadWebLlmEngine, type LlmEngine } from '../chat/generate';
 import { groundedAnswer, type ChatReply } from '../chat/grounded';
+import { computeStyleProfile } from '../style/profile';
 import type { SemanticIndex } from '../retrieval/search';
 import { h } from './dom';
 
@@ -43,6 +45,25 @@ export function chatSection(a: Archive, getIndex: () => SemanticIndex | null): H
     input,
     h('button', { class: 'btn', type: 'submit' }, 'Ask'),
   );
+  let engine: LlmEngine | null = null;
+  const llmBtn = h(
+    'button',
+    { class: 'btn', type: 'button', 'data-testid': 'llm-enable' },
+    'Use local model (WebGPU)',
+  );
+  llmBtn.addEventListener('click', () => {
+    llmBtn.disabled = true;
+    status.textContent = 'Checking WebGPU…';
+    loadWebLlmEngine('Llama-3.2-1B-Instruct-q4f16_1-MLC', (f, t) => {
+      status.textContent = `Downloading model ${Math.round(f * 100)}% ${t}`;
+    }).then((e) => {
+      engine = e;
+      status.textContent = e
+        ? 'Local model ready. Replies are generated on this device.'
+        : 'Local model unavailable here (needs WebGPU). Using memory quotes instead.';
+      llmBtn.disabled = !!e || false;
+    });
+  });
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const q = input.value.trim();
@@ -55,7 +76,8 @@ export function chatSection(a: Archive, getIndex: () => SemanticIndex | null): H
     status.textContent = 'Thinking…';
     input.value = '';
     log.append(messageEl('you', q));
-    groundedAnswer(a, index, q).then(
+    const style = a.voiceSamples?.length ? computeStyleProfile(a.voiceSamples) : undefined;
+    (engine ? generateAnswer(a, index, q, { engine, style }) : groundedAnswer(a, index, q)).then(
       (r) => {
         status.textContent = '';
         log.append(messageEl('twin', r.text, r));
@@ -77,5 +99,6 @@ export function chatSection(a: Archive, getIndex: () => SemanticIndex | null): H
     log,
     status,
     form,
+    llmBtn,
   );
 }

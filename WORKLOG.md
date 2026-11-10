@@ -135,3 +135,10 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Tests:** 6 new (grounding, citations valid and quoted, determinism, empty input, threshold, off-limits, message rendering).
 **Not verified:** UI not run in a browser, no e2e; threshold is for the hashing embedder only and the neural model needs its own tuning. The older BM25 `answer` in the Studio still exists separately.
 **Next:** day 9 WebLLM/WebGPU generation with fallback to this module.
+
+## 2026-11-10: Local LLM generation with fallback
+
+**Changed:** New `src/chat/generate.ts`: `LlmEngine` interface, `detectWebGpu`, `buildMessages` (disclosure, style prompt, memories as `[m:id]`, cite-only-from-memories rules), `generateAnswer` (retrieval first via `groundedAnswer`, so gating/abstention/off-limits stay; then streams the model, strips invented citation ids, and falls back to the retrieval answer on engine error, empty output, no valid citation, or output claiming to be human; persona-claim questions get a fixed refusal with no model call), and `loadWebLlmEngine` (lazy import of `@mlc-ai/web-llm`, progress callback, returns null without WebGPU or package). Chat UI got a "Use local model (WebGPU)" button with download progress and graceful fallback message.
+**Tests:** 9 new in `generate.test.ts` using fake engines and a fake WebLLM module. 146 pass.
+**Not verified:** `@mlc-ai/web-llm` is not installed (no network here), so the real engine has never run; the adapter is checked only against a fake of its API shape, which I wrote from memory. The UI path is untested in a browser, and the model id is unvetted. Token streaming is not rendered incrementally in the UI yet (onToken unused there). Day 9 is `[~]`.
+**Next:** add the dependency and try it in a WebGPU browser, stream tokens into the bubble, then day 10 (ZIP export/import).
