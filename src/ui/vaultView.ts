@@ -9,6 +9,7 @@ import { withExtractedFacts } from '../graph/extract';
 import { graphSection } from './graphView';
 import { styleSection } from './styleView';
 import { chatSection } from './chatView';
+import { exportBundle } from '../archive/bundle';
 import { h } from './dom';
 
 let session: UnlockedVault<Archive> | null = null;
@@ -208,6 +209,16 @@ function unlockedPanel(storage: VaultStorage, rerender: () => void): HTMLElement
     h('a', { href: url, download: 'evermind-archive.json' }).click();
     URL.revokeObjectURL(url);
   };
+  const exportZip = () => {
+    // Attachment bytes are not stored in the vault yet, so only attachment-free archives bundle.
+    void exportBundle(a)
+      .then((zip) => {
+        const url = URL.createObjectURL(new Blob([zip as BlobPart], { type: 'application/zip' }));
+        h('a', { href: url, download: 'evermind-archive.zip' }).click();
+        URL.revokeObjectURL(url);
+      })
+      .catch((e: unknown) => alert(e instanceof Error ? e.message : 'Export failed'));
+  };
   const wipe = () => {
     if (!confirm('Permanently delete your vault and everything in it from this device?')) return;
     lockSession();
@@ -242,6 +253,7 @@ function unlockedPanel(storage: VaultStorage, rerender: () => void): HTMLElement
         'Open Studio',
       ),
       btn('Export archive (.json)', 'export', '', exportJson),
+      btn('Export bundle (.zip + viewer)', 'export-zip', '', exportZip),
       btn('Lock', 'lock', '', () => {
         lockSession();
         rerender();

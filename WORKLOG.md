@@ -142,3 +142,10 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Tests:** 9 new in `generate.test.ts` using fake engines and a fake WebLLM module. 146 pass.
 **Not verified:** `@mlc-ai/web-llm` is not installed (no network here), so the real engine has never run; the adapter is checked only against a fake of its API shape, which I wrote from memory. The UI path is untested in a browser, and the model id is unvetted. Token streaming is not rendered incrementally in the UI yet (onToken unused there). Day 9 is `[~]`.
 **Next:** add the dependency and try it in a WebGPU browser, stream tokens into the bubble, then day 10 (ZIP export/import).
+
+## 2026-11-11: ZIP bundle export/import
+
+**Changed:** `src/archive/zip.ts` (dependency-free ZIP writer/reader: stored entries, CRC-32, rejects traversal/duplicates/corruption), `bundle.ts` (`exportBundle`/`importBundle`: archive.json + attachments + viewer.html; size and sha256 checked both ways; archive validated on import), `viewer.ts` (standalone read-only HTML, escaped, no scripts, strict CSP, shows the AI disclosure). Vault panel got an "Export bundle (.zip + viewer)" button. Format doc updated.
+**Tests:** 9 new (CRC check value, zip round trip, corruption, demo round trip, attachment round trip, mismatch/missing, tampered attachment, bad bundles, viewer escaping). 
+**Not verified:** UI download not run in a browser. The vault does not store attachment bytes yet, so the UI exports attachment-free bundles only; no import UI (needs merge-vs-replace decision). Compressed (deflate) zips from other tools are rejected. Day 10 is `[~]`.
+**Next:** import UI + attachment storage in the vault, then day 11 capsules/life book.

@@ -8,7 +8,8 @@ that). Source of truth for types: [`src/archive/schema.ts`](../src/archive/schem
 ## Container
 
 - **Minimal**: a single `evermind-archive.json` file.
-- **With attachments** (planned, day 10): a ZIP containing `archive.json` plus `attachments/<file>`.
+- **Bundle** (`src/archive/bundle.ts`): a ZIP (stored entries, CRC-32 checked) containing `archive.json`, `attachments/<file>` and a script-free read-only `viewer.html` (CSP `default-src 'none'`). Import verifies size and sha256 of every attachment and validates the archive.
+- **With attachments**: a ZIP containing `archive.json` plus `attachments/<file>`.
   Attachment bytes are never embedded in the JSON; each one is referenced by `path`, `bytes` and `sha256`.
 
 ## Top-level object
