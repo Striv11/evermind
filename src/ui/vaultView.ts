@@ -9,7 +9,8 @@ import { withExtractedFacts } from '../graph/extract';
 import { graphSection } from './graphView';
 import { styleSection } from './styleView';
 import { chatSection } from './chatView';
-import { exportBundle } from '../archive/bundle';
+import { exportBundle, importBundle } from '../archive/bundle';
+import { mergeArchive } from '../archive/merge';
 import { h } from './dom';
 
 let session: UnlockedVault<Archive> | null = null;
@@ -21,6 +22,7 @@ export function lockSession(): void {
 }
 
 let semantic: SemanticIndex | null = null;
+let lastImportMessage = '';
 
 /** Search panel: builds (or loads) the encrypted vector index, then searches by meaning. */
 function searchPanel(storage: VaultStorage, a: Archive): HTMLElement {
@@ -101,6 +103,40 @@ export async function saveArchive(
   if (!check.ok)
     throw new Error(`Refusing to save an invalid archive: ${check.issues[0]?.message}`);
   await storage.store(await v.save(a));
+}
+
+/**
+ * Read a .zip bundle or .json archive and merge it into the open vault. Attachment bytes cannot
+ * be stored in the vault yet, so attachment references are dropped (and counted) rather than
+ * left dangling.
+ */
+export async function importFileIntoVault(
+  file: Blob,
+  name: string,
+  storage: VaultStorage = new IndexedDbStorage(),
+): Promise<string> {
+  const v = activeVault();
+  if (!v) throw new Error('The vault is locked.');
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let incoming: Archive;
+  if (name.toLowerCase().endsWith('.zip')) {
+    incoming = (await importBundle(bytes)).archive;
+  } else {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(new TextDecoder().decode(bytes));
+    } catch {
+      throw new Error('That file is not valid JSON.');
+    }
+    const check = validateArchive(parsed);
+    if (!check.ok) throw new Error(`Not a valid archive: ${check.issues[0]?.message}`);
+    incoming = check.archive;
+  }
+  const dropped = incoming.attachments.length;
+  const r = mergeArchive(v.data, { ...incoming, attachments: [] });
+  await saveArchive(r.archive, storage);
+  const note = dropped ? ` ${dropped} attachments were not imported (not supported yet).` : '';
+  return `Imported ${r.added} records; ${r.skipped} already present.${note}`;
 }
 
 export async function vaultView(
@@ -219,6 +255,32 @@ function unlockedPanel(storage: VaultStorage, rerender: () => void): HTMLElement
       })
       .catch((e: unknown) => alert(e instanceof Error ? e.message : 'Export failed'));
   };
+  const importInput = h('input', {
+    type: 'file',
+    accept: '.zip,.json,application/zip,application/json',
+    hidden: '',
+    'data-testid': 'import-file',
+  }) as HTMLInputElement;
+  const importStatus = h(
+    'p',
+    { class: 'fine', role: 'status', 'data-testid': 'import-status' },
+    lastImportMessage,
+  );
+  lastImportMessage = '';
+  importInput.addEventListener('change', () => {
+    const f = importInput.files?.[0];
+    if (!f) return;
+    importStatus.textContent = 'Importing…';
+    importFileIntoVault(f, f.name, storage)
+      .then((msg) => {
+        lastImportMessage = msg;
+        rerender();
+      })
+      .catch((e: unknown) => {
+        importStatus.textContent = e instanceof Error ? e.message : 'Import failed.';
+      });
+    importInput.value = '';
+  });
   const wipe = () => {
     if (!confirm('Permanently delete your vault and everything in it from this device?')) return;
     lockSession();
@@ -244,6 +306,8 @@ function unlockedPanel(storage: VaultStorage, rerender: () => void): HTMLElement
     ...(a.memories.length ? [chatSection(a, () => semantic)] : []),
     ...(a.memories.length ? [graphSection(withExtractedFacts(a))] : []),
     ...(a.voiceSamples.length ? [styleSection(a)] : []),
+    importInput,
+    importStatus,
     h(
       'div',
       { class: 'cta' },
@@ -254,6 +318,7 @@ function unlockedPanel(storage: VaultStorage, rerender: () => void): HTMLElement
       ),
       btn('Export archive (.json)', 'export', '', exportJson),
       btn('Export bundle (.zip + viewer)', 'export-zip', '', exportZip),
+      btn('Import archive (.zip / .json)', 'import', '', () => importInput.click()),
       btn('Lock', 'lock', '', () => {
         lockSession();
         rerender();

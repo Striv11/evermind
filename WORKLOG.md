@@ -149,3 +149,10 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Tests:** 9 new (CRC check value, zip round trip, corruption, demo round trip, attachment round trip, mismatch/missing, tampered attachment, bad bundles, viewer escaping). 
 **Not verified:** UI download not run in a browser. The vault does not store attachment bytes yet, so the UI exports attachment-free bundles only; no import UI (needs merge-vs-replace decision). Compressed (deflate) zips from other tools are rejected. Day 10 is `[~]`.
 **Next:** import UI + attachment storage in the vault, then day 11 capsules/life book.
+
+## 2026-11-12: Archive import into the vault
+
+**Changed:** `src/archive/merge.ts` (`mergeArchive`: adds records with unseen ids across sources, people, memories, facts, voice samples, capsules; local copy wins on id clash; subject, disclosure, identity and legacy policy never overwritten; idempotent). Vault panel got "Import archive (.zip / .json)": bundles go through `importBundle` (sha256 checked), JSON through the validator, then merge and re-encrypt via `saveArchive`; a result message shows counts. Attachment refs are dropped and counted because the vault cannot store bytes yet (keeping them would make later exports fail). Day 10 ticked off.
+**Tests:** 5 new (4 merge unit tests, 1 jsdom import test covering counts, idempotence, invalid JSON). 160 pass.
+**Not verified:** file picker not exercised in a browser; zip path of `importFileIntoVault` is covered only via `importBundle`'s own tests. Attachments still cannot round trip through the vault.
+**Next:** day 11: time capsules (clock-injected seal/unlock) and the printable life book.

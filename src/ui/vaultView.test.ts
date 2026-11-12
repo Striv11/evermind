@@ -52,3 +52,29 @@ describe('chat section', () => {
     expect(messageEl('you', 'hi').querySelector('[data-testid=ai-label]')).toBeNull();
   });
 });
+
+describe('import into an unlocked vault', () => {
+  it('merges a json archive, reports counts, and is idempotent', async () => {
+    const { importFileIntoVault, activeVault } = await import('./vaultView');
+    const storage = new MemoryStorage();
+    const { envelope } = await createVault('correct horse battery', emptyArchive('Me'));
+    await storage.store(envelope);
+    const root = document.createElement('div');
+    await vaultView(root, storage);
+    (root.querySelector('[data-testid=passphrase]') as HTMLInputElement).value =
+      'correct horse battery';
+    root.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+    for (let i = 0; i < 100 && !root.querySelector('[data-testid=lock]'); i++)
+      await new Promise((r) => setTimeout(r, 50));
+    const demo = demoArchive();
+    const blob = new Blob([JSON.stringify(demo)]);
+    const msg = await importFileIntoVault(blob, 'a.json', storage);
+    expect(msg).toMatch(/^Imported [1-9]\d* records; 0 already/);
+    expect(activeVault()!.data.memories).toHaveLength(demo.memories.length);
+    expect(await importFileIntoVault(blob, 'a.json', storage)).toMatch(/Imported 0 records/);
+    await expect(importFileIntoVault(new Blob(['nope']), 'b.json', storage)).rejects.toThrow(
+      /JSON/,
+    );
+    lockSession();
+  });
+});
