@@ -59,6 +59,10 @@ A capsule's `body` is stored in the clear in the archive. "Locked until `unlockA
 Evermind app's UI, not by cryptography. Anyone who opens the JSON can read it. Real time-lock
 encryption is on the roadmap as an opt-in.
 
+`unlockAt` is either `YYYY-MM-DD` (opens at 00:00 UTC) or a full ISO datetime. The app refuses to create a
+capsule whose unlock time is not in the future, never shows the body while sealed, and leaves sealed
+capsules out of the printable life book.
+
 ## Versioning
 
 Additive, backwards-compatible changes keep `version: 1`. Breaking changes bump `version`; the app will

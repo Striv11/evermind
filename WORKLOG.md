@@ -156,3 +156,10 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Tests:** 5 new (4 merge unit tests, 1 jsdom import test covering counts, idempotence, invalid JSON). 160 pass.
 **Not verified:** file picker not exercised in a browser; zip path of `importFileIntoVault` is covered only via `importBundle`'s own tests. Attachments still cannot round trip through the vault.
 **Next:** day 11: time capsules (clock-injected seal/unlock) and the printable life book.
+
+## 2026-11-13: Time capsules and life book
+
+**Changed:** `src/legacy/capsule.ts` (seal with future-date validation, `capsuleState`/`openCapsule`/`capsuleView` with an injected clock; body withheld while sealed, remove) and `src/legacy/lifebook.ts` (chapters by decade, undated last; self-contained escaped HTML with print CSS, per-entry `[memory-id]` + source citation, AI disclosure, no scripts, capsules never included). New Studio section "6 · Time capsules and life book" (`src/ui/capsuleView.ts`): seal form, list, remove, open life book in a new tab to print. Format doc notes `unlockAt` semantics. Day 11 ticked off.
+**Tests:** 8 new (seal/trim/validate, sealed one second before and open at the boundary, bad inputs, unique ids, decade grouping, demo book citations, escaping and capsule exclusion, empty). 168 pass.
+**Not verified:** UI not run in a browser (no e2e for seal or the book window); print layout not checked in real print preview. Date-only unlock dates are UTC midnight, so local timing is off by up to a day.
+**Next:** day 12 evals (>= 60 questions) and performance budgets.

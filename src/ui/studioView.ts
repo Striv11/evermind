@@ -11,6 +11,7 @@ import { importChat, importDocuments } from '../importers/ingest';
 import { ImportError } from '../importers/markdown';
 import { captureSection } from './captureView';
 import { legacySection } from './legacyView';
+import { capsuleSection } from './capsuleView';
 import { rate } from '../identity/fidelity';
 import { THEME_LABELS, THEMES, type Theme } from '../insight/themes';
 import { bestFrame } from '../twin/frame';
@@ -105,6 +106,7 @@ export function studioView(root: HTMLElement): void {
       memoriesBox,
       twinSection(refresh),
       legacySection(),
+      capsuleSection(),
     ),
   );
 }
