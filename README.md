@@ -72,6 +72,7 @@ Status: landing, demo shell, vault and retrieval-grounded chat (quotes and cites
 - **PBKDF2 first, Argon2-WASM later**: PBKDF2 is built into WebCrypto (zero dependencies); Argon2id is a roadmap upgrade, and the envelope's `kdf` field and `version` allow migration.
 - **Verifier in the header**: lets the UI say "wrong passphrase" vs "data tampered"; it gives an offline guess oracle equivalent to the one the ciphertext already provides.
 - **Time capsules are app-enforced**, not cryptographic; documented in the format spec.
+- **Evals and budgets are tests**: 68 questions on the demo persona report recall@k, grounding and abstention in [docs/EVALS.md](docs/EVALS.md) (`npm run eval:write`); initial JS < 60 KB gzip is checked by `check.sh`, vault unlock < 1.5 s and search < 50 ms at 10k chunks by `npm run bench:budgets`.
 - **Embeddings are derived data**, not archived, so the format stays small and model-independent.
 
 ## Roadmap

@@ -163,3 +163,11 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Tests:** 8 new (seal/trim/validate, sealed one second before and open at the boundary, bad inputs, unique ids, decade grouping, demo book citations, escaping and capsule exclusion, empty). 168 pass.
 **Not verified:** UI not run in a browser (no e2e for seal or the book window); print layout not checked in real print preview. Date-only unlock dates are UTC midnight, so local timing is off by up to a day.
 **Next:** day 12 evals (>= 60 questions) and performance budgets.
+
+## 2026-11-14: Evals and performance budgets
+
+**Changed:** `src/eval/questions.ts` (48 answerable + 20 unanswerable questions on the demo persona), `run.ts` (recall@1/3/5, grounding rate, wrong-answer rate, false-abstain rate, abstention precision/recall, misses list, markdown renderer), generated `docs/EVALS.md` (`npm run eval:write`; a test fails if it is stale). Budgets: `scripts/budget.mjs` runs at the end of `check.sh` and fails if initial JS (what index.html references) exceeds 60 KB gzip (now 46.1); `budget.test.ts` asserts vault unlock < 1.5 s at 600k PBKDF2 iterations (about 0.26 s here) and search < 50 ms at 10k chunks (median 2.7 ms, HNSW; top-10 score sum within 5% of exact search). CI runs `npm run bench:budgets`.
+**Results (hashing embedder):** recall@1 85%, recall@5 96%, grounding 79%, wrong answers 4%, false abstains 17%, abstention precision 71%, recall 100%. The misses are listed in the doc.
+**Learned:** HNSW build for 10k vectors takes ~29 s on random-ish text (9 s on tie-heavy text). Search is fast but index build is the real scaling cost, so the 10k test is opt-in (`BENCH=1`) and `check.sh` runs a 1.5k-chunk version. My first approximate-vs-exact check compared ids on tie-heavy synthetic data and was meaningless; comparing scores is the sound check.
+**Not verified:** the neural embedder has no eval numbers; questions are written by the persona's author and the threshold was tuned on part of the set, so results are optimistic. Unlock time is measured in Node's WebCrypto, not a browser.
+**Next:** day 13 polish (onboarding, empty/error states, 360 px audit, auto-lock, axe checks); consider speeding up HNSW build.

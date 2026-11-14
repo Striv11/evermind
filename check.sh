@@ -10,3 +10,4 @@ npx eslint .
 npx tsc --noEmit
 npx vitest run
 npx vite build
+node scripts/budget.mjs
