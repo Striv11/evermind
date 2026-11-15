@@ -1,7 +1,7 @@
 import './ui/styles.css';
 import { demoArchive } from './demo/persona';
 import { landingView, demoView } from './ui/views';
-import { lockSession, vaultView } from './ui/vaultView';
+import { lockSession, onAutoLock, touchActivity, vaultView } from './ui/vaultView';
 import { studioView } from './ui/studioView';
 
 const main = document.getElementById('main')!;
@@ -56,5 +56,12 @@ document.addEventListener('keydown', (e) => {
 // Lock when the tab is closed or hidden for a long time is a later hardening item; for now,
 // the key only ever lives in memory and disappears on reload.
 window.addEventListener('pagehide', lockSession);
+
+// Idle auto-lock: any interaction postpones it; when it fires, return to a locked screen.
+for (const ev of ['pointerdown', 'keydown', 'wheel', 'touchstart'])
+  document.addEventListener(ev, touchActivity, { passive: true });
+onAutoLock(() => {
+  if (location.hash === '#/vault' || location.hash === '#/studio') route();
+});
 window.addEventListener('hashchange', route);
 route();

@@ -171,3 +171,10 @@ Newest entries at the bottom. Each entry records what actually changed, what was
 **Learned:** HNSW build for 10k vectors takes ~29 s on random-ish text (9 s on tie-heavy text). Search is fast but index build is the real scaling cost, so the 10k test is opt-in (`BENCH=1`) and `check.sh` runs a 1.5k-chunk version. My first approximate-vs-exact check compared ids on tie-heavy synthetic data and was meaningless; comparing scores is the sound check.
 **Not verified:** the neural embedder has no eval numbers; questions are written by the persona's author and the threshold was tuned on part of the set, so results are optimistic. Unlock time is measured in Node's WebCrypto, not a browser.
 **Next:** day 13 polish (onboarding, empty/error states, 360 px audit, auto-lock, axe checks); consider speeding up HNSW build.
+
+## 2026-11-15: Auto-lock (day 13, first slice)
+
+**Changed:** `src/vault/autolock.ts`: `IdleLock` with an injected scheduler (start/stop/touch/setMinutes, fires once), choices 0/1/5/15/30/60 minutes, default 15, safe parsing of the stored preference. Wired in `vaultView.ts` (starts on create/unlock, stops on lock, preference in localStorage, selector in the unlocked panel) and `main.ts` (pointer/key/wheel/touch activity postpones it; on fire the vault/studio route re-renders locked). Day 13 is `[~]`.
+**Tests:** 5 new in `autolock.test.ts` (fires once at the boundary, activity postpones, disabled/stopped, re-arm on change, parsing) and 1 jsdom test for the setting.
+**Not verified:** not run in a browser; no e2e that waits for an actual auto-lock. Activity in the Studio (e.g. a long recording with no input) counts as idle, which may lock mid-session.
+**Next:** rest of day 13: onboarding, empty/error states, 360 px audit, axe checks in e2e, refreshed screenshots.

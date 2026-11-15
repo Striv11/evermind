@@ -78,3 +78,17 @@ describe('import into an unlocked vault', () => {
     lockSession();
   });
 });
+
+describe('auto-lock setting', () => {
+  it('offers the choices, defaults to 15 minutes and persists a change', async () => {
+    localStorage.removeItem('evermind-autolock-minutes');
+    const root = await open(emptyArchive('Me'));
+    const sel = root.querySelector('[data-testid=autolock]') as HTMLSelectElement;
+    expect(sel.value).toBe('15');
+    expect([...sel.options].map((o) => o.value)).toContain('0');
+    sel.value = '5';
+    sel.dispatchEvent(new Event('change'));
+    expect(localStorage.getItem('evermind-autolock-minutes')).toBe('5');
+    lockSession();
+  });
+});

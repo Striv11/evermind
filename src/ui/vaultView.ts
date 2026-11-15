@@ -11,11 +11,39 @@ import { styleSection } from './styleView';
 import { chatSection } from './chatView';
 import { exportBundle, importBundle } from '../archive/bundle';
 import { mergeArchive } from '../archive/merge';
+import { IdleLock, AUTOLOCK_CHOICES, parseAutolockMinutes } from '../vault/autolock';
 import { h } from './dom';
+
+const AUTOLOCK_KEY = 'evermind-autolock-minutes';
+
+function readAutolock(): number {
+  try {
+    return parseAutolockMinutes(localStorage.getItem(AUTOLOCK_KEY));
+  } catch {
+    return parseAutolockMinutes(null);
+  }
+}
+
+let autoLockHandler: () => void = () => {};
+const idle = new IdleLock(readAutolock(), () => {
+  lockSession();
+  autoLockHandler();
+});
+
+/** Called after the vault locks itself from inactivity, so the app can show the unlock screen. */
+export function onAutoLock(cb: () => void): void {
+  autoLockHandler = cb;
+}
+
+/** Report user activity; postpones the idle lock. */
+export function touchActivity(): void {
+  idle.touch();
+}
 
 let session: UnlockedVault<Archive> | null = null;
 
 export function lockSession(): void {
+  idle.stop();
   session?.lock();
   session = null;
   semantic = null;
@@ -202,10 +230,12 @@ export async function vaultView(
       try {
         if (existing) {
           session = await unlockVault<Archive>(existing, p);
+          idle.start();
         } else {
           const { envelope, vault } = await createVault(p, emptyArchive('Me'));
           await storage.store(envelope);
           session = vault;
+          idle.start();
         }
         rerender();
       } catch (e) {
@@ -281,6 +311,29 @@ function unlockedPanel(storage: VaultStorage, rerender: () => void): HTMLElement
       });
     importInput.value = '';
   });
+  const autoSel = h(
+    'select',
+    { id: 'autolock', 'data-testid': 'autolock' },
+    ...AUTOLOCK_CHOICES.map((m) =>
+      h('option', { value: String(m) }, m === 0 ? 'Never' : `${m} min`),
+    ),
+  ) as HTMLSelectElement;
+  autoSel.value = String(readAutolock());
+  autoSel.addEventListener('change', () => {
+    const m = parseAutolockMinutes(autoSel.value);
+    try {
+      localStorage.setItem(AUTOLOCK_KEY, String(m));
+    } catch {
+      /* preference only lasts for this session */
+    }
+    idle.setMinutes(m);
+  });
+  const autoRow = h(
+    'p',
+    { class: 'fine' },
+    h('label', { for: 'autolock' }, 'Lock automatically after inactivity: '),
+    autoSel,
+  );
   const wipe = () => {
     if (!confirm('Permanently delete your vault and everything in it from this device?')) return;
     lockSession();
@@ -308,6 +361,7 @@ function unlockedPanel(storage: VaultStorage, rerender: () => void): HTMLElement
     ...(a.voiceSamples.length ? [styleSection(a)] : []),
     importInput,
     importStatus,
+    autoRow,
     h(
       'div',
       { class: 'cta' },
